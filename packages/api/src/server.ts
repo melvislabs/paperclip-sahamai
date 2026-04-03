@@ -1,6 +1,9 @@
 import Fastify from 'fastify';
-import { CACHE_TTL_MS, TtlCache, ObservabilityHub, SignalStore } from '@sahamai/shared';
-import type { LatestSignal, SignalWithFreshness } from '@sahamai/shared';
+import fastifyRateLimit from '@fastify/rate-limit';
+import fastifyCors from '@fastify/cors';
+import fastifyHelmet from '@fastify/helmet';
+import { CACHE_TTL_MS, TtlCache, ObservabilityHub, SignalStore, AIAnalysisService, MockLLMProvider, buildStockApiConfig, StockApiClient } from '@sahamai/shared';
+import type { LatestSignal, SignalWithFreshness, PriceDataPoint, NewsItem, AIAnalysisResult } from '@sahamai/shared';
 
 function buildSeedSignals(nowMs: number): LatestSignal[] {
   return [
@@ -30,6 +33,66 @@ export function buildServer(nowProvider: () => number = () => Date.now()) {
   const store = new SignalStore();
   const cache = new TtlCache<SignalWithFreshness | null>(CACHE_TTL_MS);
   const observability = new ObservabilityHub(nowProvider);
+
+  app.register(fastifyHelmet, {
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'"],
+        imgSrc: ["'self'"],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"],
+        frameSrc: ["'none'"]
+      }
+    },
+    crossOriginEmbedderPolicy: true,
+    crossOriginOpenerPolicy: true,
+    crossOriginResourcePolicy: true,
+    dnsPrefetchControl: { allow: false },
+    frameguard: { action: 'deny' },
+    hidePoweredBy: true,
+    hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+    ieNoOpen: true,
+    noSniff: true,
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    xssFilter: true
+  });
+
+  app.register(fastifyCors, {
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || false,
+    methods: ['GET'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
+    exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset', 'Retry-After'],
+    credentials: true,
+    maxAge: 600
+  });
+
+  app.register(fastifyRateLimit, {
+    max: 100,
+    timeWindow: '1 minute',
+    keyGenerator: (request) => request.ip,
+    allowList: (request) => process.env.NODE_ENV === 'test',
+    errorResponseBuilder: (request, context) => ({
+      code: 429,
+      error: 'Too Many Requests',
+      message: `Rate limit exceeded. Try again in ${Math.ceil((Number(context.after) - Date.now()) / 1000)} seconds`,
+      retryAfter: Math.ceil((Number(context.after) - Date.now()) / 1000)
+    }),
+    addHeadersOnExceeding: {
+      'x-ratelimit-limit': true,
+      'x-ratelimit-remaining': true,
+      'x-ratelimit-reset': true
+    },
+    addHeaders: {
+      'x-ratelimit-limit': true,
+      'x-ratelimit-remaining': true,
+      'x-ratelimit-reset': true,
+      'retry-after': true
+    }
+  });
 
   store.seed(buildSeedSignals(nowProvider()));
 
@@ -202,6 +265,186 @@ export function buildServer(nowProvider: () => number = () => Date.now()) {
         alerts
       };
     });
+  });
+
+  const analysisCache = new TtlCache<AIAnalysisResult | null>(3600000);
+  const llmProvider = process.env.OPENAI_API_KEY
+    ? undefined
+    : new MockLLMProvider();
+  const analysisService = new AIAnalysisService({
+    llmProvider: llmProvider!,
+    now: nowProvider
+  });
+
+  app.post('/v1/analysis/:symbol', async (request, reply) => {
+    return withRequestMetrics('/v1/analysis/:symbol', async () => {
+      const params = request.params as { symbol: string };
+      const body = request.body as {
+        priceHistory: PriceDataPoint[];
+        news?: NewsItem[];
+      };
+      const symbol = params.symbol.toUpperCase();
+
+      if (!body?.priceHistory || body.priceHistory.length === 0) {
+        return reply.code(400).send({
+          error: 'Bad Request',
+          message: 'priceHistory is required and cannot be empty'
+        });
+      }
+
+      const key = `analysis:${symbol}:${body.priceHistory.length}`;
+      const cached = analysisCache.getOrLoad(key, () => null as AIAnalysisResult | null, nowProvider());
+      if (cached) return cached;
+
+      try {
+        const result = await analysisService.analyze(
+          symbol,
+          body.priceHistory,
+          body.news ?? []
+        );
+        return result;
+      } catch (error) {
+        return reply.code(500).send({
+          error: 'Analysis Failed',
+          message: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    }, () => reply.statusCode);
+  });
+
+  app.get('/v1/analysis/:symbol/latest', async (request, reply) => {
+    return withRequestMetrics('/v1/analysis/:symbol/latest', async () => {
+      const params = request.params as { symbol: string };
+      const symbol = params.symbol.toUpperCase();
+      const key = `analysis_latest:${symbol}`;
+
+      const cached = analysisCache.getOrLoad(key, () => null as AIAnalysisResult | null, nowProvider());
+      if (!cached) {
+        return reply.code(404).send({
+          symbol,
+          message: 'No analysis available'
+        });
+      }
+
+      return cached;
+    }, () => reply.statusCode);
+  });
+
+  const stockApiConfig = buildStockApiConfig({
+    provider: (process.env.STOCK_API_PROVIDER as any) || 'finnhub',
+    apiKey: process.env.STOCK_API_KEY || '',
+    cacheTtlMs: 5 * 60 * 1000
+  });
+
+  const stockApiClient = process.env.STOCK_API_KEY
+    ? new StockApiClient(stockApiConfig)
+    : null;
+
+  app.get('/v1/stocks/:symbol/quote', async (request, reply) => {
+    return withRequestMetrics('/v1/stocks/:symbol/quote', async () => {
+      if (!stockApiClient) {
+        return reply.code(503).send({
+          error: 'Service Unavailable',
+          message: 'Stock data API not configured. Set STOCK_API_KEY environment variable.'
+        });
+      }
+
+      const params = request.params as { symbol: string };
+      const symbol = params.symbol.toUpperCase();
+
+      try {
+        const result = await stockApiClient.getQuote(symbol);
+        return result;
+      } catch (error) {
+        return reply.code(502).send({
+          error: 'Bad Gateway',
+          message: error instanceof Error ? error.message : 'Failed to fetch quote'
+        });
+      }
+    }, () => reply.statusCode);
+  });
+
+  app.get('/v1/stocks/:symbol/history', async (request, reply) => {
+    return withRequestMetrics('/v1/stocks/:symbol/history', async () => {
+      if (!stockApiClient) {
+        return reply.code(503).send({
+          error: 'Service Unavailable',
+          message: 'Stock data API not configured. Set STOCK_API_KEY environment variable.'
+        });
+      }
+
+      const params = request.params as { symbol: string };
+      const query = request.query as { interval?: string; from?: string; to?: string };
+      const symbol = params.symbol.toUpperCase();
+
+      try {
+        const result = await stockApiClient.getHistory(
+          symbol,
+          query.interval || '1day',
+          query.from,
+          query.to
+        );
+        return result;
+      } catch (error) {
+        return reply.code(502).send({
+          error: 'Bad Gateway',
+          message: error instanceof Error ? error.message : 'Failed to fetch history'
+        });
+      }
+    }, () => reply.statusCode);
+  });
+
+  app.get('/v1/stocks/:symbol/news', async (request, reply) => {
+    return withRequestMetrics('/v1/stocks/:symbol/news', async () => {
+      if (!stockApiClient) {
+        return reply.code(503).send({
+          error: 'Service Unavailable',
+          message: 'Stock data API not configured. Set STOCK_API_KEY environment variable.'
+        });
+      }
+
+      const params = request.params as { symbol: string };
+      const symbol = params.symbol.toUpperCase();
+
+      try {
+        const result = await stockApiClient.getNews(symbol);
+        return result;
+      } catch (error) {
+        return reply.code(502).send({
+          error: 'Bad Gateway',
+          message: error instanceof Error ? error.message : 'Failed to fetch news'
+        });
+      }
+    }, () => reply.statusCode);
+  });
+
+  app.get('/v1/stocks/search', async (request, reply) => {
+    return withRequestMetrics('/v1/stocks/search', async () => {
+      if (!stockApiClient) {
+        return reply.code(503).send({
+          error: 'Service Unavailable',
+          message: 'Stock data API not configured. Set STOCK_API_KEY environment variable.'
+        });
+      }
+
+      const query = request.query as { q: string };
+      if (!query.q) {
+        return reply.code(400).send({
+          error: 'Bad Request',
+          message: 'q parameter is required'
+        });
+      }
+
+      try {
+        const result = await stockApiClient.search(query.q);
+        return result;
+      } catch (error) {
+        return reply.code(502).send({
+          error: 'Bad Gateway',
+          message: error instanceof Error ? error.message : 'Failed to search stocks'
+        });
+      }
+    }, () => reply.statusCode);
   });
 
   return app;
