@@ -2,10 +2,15 @@ name: CI
 
 on:
   push:
+    branches: [main, develop]
   pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: 22
 
 jobs:
-  test:
+  lint-and-typecheck:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -14,7 +19,29 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build shared (required for typecheck)
+        run: npm run build -w @sahamai/shared
+
+      - name: Typecheck
+        run: npx tsc --noEmit -w packages/api/tsconfig.json && npx tsc --noEmit -w packages/worker/tsconfig.json && npx tsc --noEmit -w packages/shared/tsconfig.json
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint-and-typecheck
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
       - name: Install dependencies
@@ -34,3 +61,28 @@ jobs:
 
       - name: Runtime smoke check
         run: npm run smoke:runtime -w @sahamai/api
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build all packages
+        run: npm run build
+
+      - name: Verify build output
+        run: |
+          test -d packages/shared/dist
+          test -d packages/api/dist
+          test -d packages/worker/dist

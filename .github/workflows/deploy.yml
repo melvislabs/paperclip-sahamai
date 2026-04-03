@@ -1,0 +1,50 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["Docker Build & Push"]
+    types:
+      - completed
+    branches: [main]
+
+jobs:
+  deploy-staging:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to staging
+        run: |
+          echo "Deploying to staging environment"
+          # Add your staging deployment commands here
+          # Examples:
+          # - kubectl apply -f k8s/staging/
+          # - docker compose -f docker-compose.staging.yml up -d
+          # - ssh deploy@staging 'cd /app && docker compose pull && docker compose up -d'
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment: production
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to production
+        run: |
+          echo "Deploying to production environment"
+          # Add your production deployment commands here
+          # Examples:
+          # - kubectl apply -f k8s/production/
+          # - docker compose -f docker-compose.prod.yml up -d
+          # - ssh deploy@production 'cd /app && docker compose pull && docker compose up -d'
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+          PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
