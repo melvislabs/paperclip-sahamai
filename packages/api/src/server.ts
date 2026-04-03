@@ -4,6 +4,19 @@ import fastifyCors from '@fastify/cors';
 import fastifyHelmet from '@fastify/helmet';
 import { CACHE_TTL_MS, TtlCache, ObservabilityHub, SignalStore, AIAnalysisService, MockLLMProvider, buildStockApiConfig, StockApiClient } from '@sahamai/shared';
 import type { LatestSignal, SignalWithFreshness, PriceDataPoint, NewsItem, AIAnalysisResult } from '@sahamai/shared';
+import { registerAuthRoutes, protectRoutes } from './auth/middleware.js';
+import {
+  SymbolParamSchema,
+  SymbolsQuerySchema,
+  AnalysisBodySchema,
+  SearchQuerySchema,
+  HistoryQuerySchema,
+  RegisterBodySchema,
+  LoginBodySchema,
+  RefreshBodySchema,
+  CreateApiKeyBodySchema,
+  ValidationErrorSchema
+} from './auth/schemas.js';
 
 function buildSeedSignals(nowMs: number): LatestSignal[] {
   return [
@@ -29,7 +42,28 @@ function buildSeedSignals(nowMs: number): LatestSignal[] {
 }
 
 export function buildServer(nowProvider: () => number = () => Date.now()) {
-  const app = Fastify({ logger: false });
+  const app = Fastify({
+    logger: {
+      level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+      serializers: {
+        req(request) {
+          return {
+            method: request.method,
+            url: request.url,
+            path: request.url,
+            parameters: request.params,
+            remoteAddress: request.ip,
+            remotePort: request.socket?.remotePort
+          };
+        },
+        res(reply) {
+          return {
+            statusCode: reply.statusCode
+          };
+        }
+      }
+    }
+  });
   const store = new SignalStore();
   const cache = new TtlCache<SignalWithFreshness | null>(CACHE_TTL_MS);
   const observability = new ObservabilityHub(nowProvider);
@@ -96,6 +130,19 @@ export function buildServer(nowProvider: () => number = () => Date.now()) {
 
   store.seed(buildSeedSignals(nowProvider()));
 
+  registerAuthRoutes(app);
+
+  const protectedRoutes = [
+    '/v1/signals',
+    '/v1/analysis',
+    '/v1/stocks',
+    '/v1/ops'
+  ];
+
+  protectRoutes(app, protectedRoutes, {
+    skipAuth: ['/health', '/v1/auth/register', '/v1/auth/login', '/v1/auth/refresh']
+  });
+
   const refreshFreshness = () => {
     const allSignals = store.all(nowProvider());
     const staleCount = allSignals.filter((item) => item.stale).length;
@@ -127,7 +174,11 @@ export function buildServer(nowProvider: () => number = () => Date.now()) {
     }));
   });
 
-  app.get('/v1/signals/latest/:symbol', async (request, reply) => {
+  app.get('/v1/signals/latest/:symbol', {
+    schema: {
+      params: SymbolParamSchema
+    }
+  }, async (request, reply) => {
     return withRequestMetrics('/v1/signals/latest/:symbol', async () => {
       const params = request.params as { symbol: string };
       const symbol = params.symbol.toUpperCase();
@@ -167,7 +218,11 @@ export function buildServer(nowProvider: () => number = () => Date.now()) {
     }, () => reply.statusCode);
   });
 
-  app.get('/v1/signals/latest', async (request) => {
+  app.get('/v1/signals/latest', {
+    schema: {
+      querystring: SymbolsQuerySchema
+    }
+  }, async (request) => {
     return withRequestMetrics('/v1/signals/latest', async () => {
       const query = request.query as { symbols?: string };
       const symbols = (query.symbols ?? '')
@@ -276,7 +331,23 @@ export function buildServer(nowProvider: () => number = () => Date.now()) {
     now: nowProvider
   });
 
-  app.post('/v1/analysis/:symbol', async (request, reply) => {
+  app.post('/v1/analysis/:symbol', {
+    schema: {
+      params: SymbolParamSchema,
+      body: AnalysisBodySchema,
+      response: {
+        400: ValidationErrorSchema,
+        500: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            message: { type: 'string' }
+          }
+        }
+      }
+    },
+    bodyLimit: 1048576 // 1MB limit for analysis payloads
+  }, async (request, reply) => {
     return withRequestMetrics('/v1/analysis/:symbol', async () => {
       const params = request.params as { symbol: string };
       const body = request.body as {
@@ -284,13 +355,6 @@ export function buildServer(nowProvider: () => number = () => Date.now()) {
         news?: NewsItem[];
       };
       const symbol = params.symbol.toUpperCase();
-
-      if (!body?.priceHistory || body.priceHistory.length === 0) {
-        return reply.code(400).send({
-          error: 'Bad Request',
-          message: 'priceHistory is required and cannot be empty'
-        });
-      }
 
       const key = `analysis:${symbol}:${body.priceHistory.length}`;
       const cached = analysisCache.getOrLoad(key, () => null as AIAnalysisResult | null, nowProvider());
@@ -306,13 +370,17 @@ export function buildServer(nowProvider: () => number = () => Date.now()) {
       } catch (error) {
         return reply.code(500).send({
           error: 'Analysis Failed',
-          message: error instanceof Error ? error.message : 'Unknown error'
+          message: 'An error occurred during analysis'
         });
       }
     }, () => reply.statusCode);
   });
 
-  app.get('/v1/analysis/:symbol/latest', async (request, reply) => {
+  app.get('/v1/analysis/:symbol/latest', {
+    schema: {
+      params: SymbolParamSchema
+    }
+  }, async (request, reply) => {
     return withRequestMetrics('/v1/analysis/:symbol/latest', async () => {
       const params = request.params as { symbol: string };
       const symbol = params.symbol.toUpperCase();
@@ -340,7 +408,11 @@ export function buildServer(nowProvider: () => number = () => Date.now()) {
     ? new StockApiClient(stockApiConfig)
     : null;
 
-  app.get('/v1/stocks/:symbol/quote', async (request, reply) => {
+  app.get('/v1/stocks/:symbol/quote', {
+    schema: {
+      params: SymbolParamSchema
+    }
+  }, async (request, reply) => {
     return withRequestMetrics('/v1/stocks/:symbol/quote', async () => {
       if (!stockApiClient) {
         return reply.code(503).send({
@@ -364,7 +436,12 @@ export function buildServer(nowProvider: () => number = () => Date.now()) {
     }, () => reply.statusCode);
   });
 
-  app.get('/v1/stocks/:symbol/history', async (request, reply) => {
+  app.get('/v1/stocks/:symbol/history', {
+    schema: {
+      params: SymbolParamSchema,
+      querystring: HistoryQuerySchema
+    }
+  }, async (request, reply) => {
     return withRequestMetrics('/v1/stocks/:symbol/history', async () => {
       if (!stockApiClient) {
         return reply.code(503).send({
@@ -394,7 +471,11 @@ export function buildServer(nowProvider: () => number = () => Date.now()) {
     }, () => reply.statusCode);
   });
 
-  app.get('/v1/stocks/:symbol/news', async (request, reply) => {
+  app.get('/v1/stocks/:symbol/news', {
+    schema: {
+      params: SymbolParamSchema
+    }
+  }, async (request, reply) => {
     return withRequestMetrics('/v1/stocks/:symbol/news', async () => {
       if (!stockApiClient) {
         return reply.code(503).send({

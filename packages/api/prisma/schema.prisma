@@ -1,0 +1,192 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String?
+  googleId      String?   @unique
+  avatarUrl     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  portfolio     Portfolio?
+  alerts        PriceAlert[]
+  analyses      AIAnalysis[]
+  digestPrefs   DigestPreference?
+
+  @@index([email])
+  @@index([googleId])
+}
+
+model Portfolio {
+  id            String    @id @default(uuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalValue    Decimal   @default(0) @db.Decimal(15, 2)
+  cashBalance   Decimal   @default(0) @db.Decimal(15, 2)
+  riskScore     Float?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  holdings      Holding[]
+
+  @@index([userId])
+}
+
+model Holding {
+  id            String    @id @default(uuid())
+  portfolioId   String
+  portfolio     Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  symbol        String
+  quantity      Int
+  avgCostPrice  Decimal   @db.Decimal(10, 2)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([portfolioId, symbol])
+  @@index([portfolioId])
+}
+
+model Stock {
+  id            String    @id @default(uuid())
+  symbol        String    @unique
+  name          String
+  exchange      String?
+  sector        String?
+  industry      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  prices        StockPrice[]
+  analyses      AIAnalysis[]
+  alerts        PriceAlert[]
+
+  @@index([symbol])
+  @@index([sector])
+}
+
+model StockPrice {
+  id            String    @id @default(uuid())
+  stockId       String
+  stock         Stock     @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  price         Decimal   @db.Decimal(10, 2)
+  open          Decimal   @db.Decimal(10, 2)
+  high          Decimal   @db.Decimal(10, 2)
+  low           Decimal   @db.Decimal(10, 2)
+  volume        BigInt
+  timestamp     DateTime
+  createdAt     DateTime  @default(now())
+
+  @@index([stockId, timestamp])
+  @@index([timestamp])
+}
+
+model AIAnalysis {
+  id            String    @id @default(uuid())
+  stockId       String
+  stock         Stock     @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  userId        String?
+  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  analysisType  AnalysisType
+  summary       String
+  sentiment     Sentiment
+  confidence    Float
+  riskLevel     RiskLevel
+  priceTarget   Decimal?  @db.Decimal(10, 2)
+  reasoning     String?
+  createdAt     DateTime  @default(now())
+
+  @@index([stockId])
+  @@index([userId])
+  @@index([analysisType])
+  @@index([sentiment])
+  @@index([createdAt])
+}
+
+model PriceAlert {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stockId       String
+  stock         Stock     @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  targetPrice   Decimal   @db.Decimal(10, 2)
+  condition     AlertCondition
+  isActive      Boolean   @default(true)
+  triggeredAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId, isActive])
+  @@index([stockId])
+}
+
+model NewsArticle {
+  id            String    @id @default(uuid())
+  title         String
+  url           String    @unique
+  source        String
+  publishedAt   DateTime
+  content       String?
+  sentiment     Sentiment @default(NEUTRAL)
+  sentimentScore Float    @default(0)
+  symbols       String[]
+  createdAt     DateTime  @default(now())
+
+  @@index([publishedAt])
+  @@index([sentiment])
+  @@index([symbols])
+}
+
+model DigestPreference {
+  id            String    @id @default(uuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enabled       Boolean   @default(true)
+  deliveryTime  String    @default("08:00")
+  timezone      String    @default("UTC")
+  includeAlerts Boolean   @default(true)
+  includeAnalysis Boolean @default(true)
+  includeMarketSummary Boolean @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+enum AnalysisType {
+  TECHNICAL
+  FUNDAMENTAL
+  SENTIMENT
+  PORTFOLIO_RISK
+  DAILY_DIGEST
+}
+
+enum Sentiment {
+  BULLISH
+  BEARISH
+  NEUTRAL
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertCondition {
+  ABOVE
+  BELOW
+  PERCENT_CHANGE
+}

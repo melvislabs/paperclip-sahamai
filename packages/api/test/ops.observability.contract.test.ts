@@ -1,14 +1,26 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeAll } from 'vitest';
 import { buildServer } from '../src/server.js';
+import { generateAccessToken } from '../src/auth/utils.js';
 
 describe('ops observability contract', () => {
   const now = 1_700_000_000_000;
   const server = buildServer(() => now);
 
+  beforeAll(() => {
+    process.env.JWT_SECRET = 'test-secret-for-jwt-auth';
+  });
+
+  const authHeaders = () => {
+    const user = { id: 'test-user', email: 'test@example.com', role: 'admin' as const };
+    const token = generateAccessToken(user);
+    return { authorization: `Bearer ${token}` };
+  };
+
   it('returns metrics with expected shape', async () => {
     const response = await server.inject({
       method: 'GET',
-      url: '/v1/ops/metrics'
+      url: '/v1/ops/metrics',
+      headers: authHeaders()
     });
 
     expect(response.statusCode).toBe(200);
@@ -37,7 +49,8 @@ describe('ops observability contract', () => {
   it('returns dashboard with SLO summary', async () => {
     const response = await server.inject({
       method: 'GET',
-      url: '/v1/ops/dashboard/latest'
+      url: '/v1/ops/dashboard/latest',
+      headers: authHeaders()
     });
 
     expect(response.statusCode).toBe(200);
@@ -55,7 +68,8 @@ describe('ops observability contract', () => {
   it('returns alerts with expected shape', async () => {
     const response = await server.inject({
       method: 'GET',
-      url: '/v1/ops/alerts/latest'
+      url: '/v1/ops/alerts/latest',
+      headers: authHeaders()
     });
 
     expect(response.statusCode).toBe(200);
