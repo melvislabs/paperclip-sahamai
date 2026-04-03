@@ -1,0 +1,18 @@
+{
+  "name": "paperclip-sahamai-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @sahamai/shared && npm run build -w @sahamai/worker && npm run build -w @sahamai/api",
+    "test": "npm run test --workspaces --if-present",
+    "dev": "npm run dev -w @sahamai/api",
+    "smoke:runtime": "npm run smoke:runtime -w @sahamai/api",
+    "smoke:deploy": "npm run smoke:deploy -w @sahamai/api"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}
