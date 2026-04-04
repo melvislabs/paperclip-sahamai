@@ -1,0 +1,13 @@
+# Use this workspace to collaborate
+workspace:
+  id: ""
+
+cloudResources:
+  collections:
+    ../postman/collections/Ollama: 52577267-cb9adf8c-8d90-4034-b427-15186023b270
+
+# All resources in the `postman/` folder are automatically registered in Local View.
+# Point to additional files outside the `postman/` folder to register them individually. Example:
+#localResources:
+#  collections:
+#    - ../tests/E2E Test Collection/

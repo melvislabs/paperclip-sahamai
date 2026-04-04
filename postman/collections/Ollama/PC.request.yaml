@@ -1,0 +1,17 @@
+$kind: http-request
+url: http://192.168.0.109:11434/api/chat
+method: POST
+body:
+  type: json
+  content: |-
+    {
+        "model": "qwen3:4b",
+        "messages": [
+            {
+                "role": "user",
+                "content": "Hello!"
+            }
+        ],
+        "stream": false
+    }
+order: 1000

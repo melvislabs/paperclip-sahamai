@@ -11,25 +11,31 @@ export function SignalsDashboard({ signals }: SignalsDashboardProps) {
   const missingSignals = signals.filter(s => s.status === 'missing');
 
   return (
-    <div className="dashboard">
-      <div className="dashboard-header">
-        <h2>Trading Signals</h2>
-        <div className="signal-summary">
-          <span className="summary-badge fresh">{freshSignals.length} Fresh</span>
-          <span className="summary-badge stale">{staleSignals.length} Stale</span>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+        <h2 className="text-2xl font-semibold text-slate-100">Trading Signals</h2>
+        <div className="flex gap-2">
+          <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-400">
+            {freshSignals.length} Fresh
+          </span>
+          <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400">
+            {staleSignals.length} Stale
+          </span>
           {missingSignals.length > 0 && (
-            <span className="summary-badge missing">{missingSignals.length} Missing</span>
+            <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-400">
+              {missingSignals.length} Missing
+            </span>
           )}
         </div>
       </div>
 
       {signals.length === 0 ? (
-        <div className="empty-state">
-          <p>No signals available</p>
-          <p className="text-muted">Signals will appear here when the system generates them</p>
+        <div className="text-center py-12 text-slate-500">
+          <p className="text-lg mb-2">No signals available</p>
+          <p className="text-sm">Signals will appear here when the system generates them</p>
         </div>
       ) : (
-        <div className="signal-grid">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {signals.map((signal) => (
             <SignalCard key={signal.symbol} signal={signal} />
           ))}

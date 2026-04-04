@@ -1,0 +1,3 @@
+export const MAX_ACTIVE_ALERTS_PER_USER = 50;
+export const MAX_NOTIFICATIONS_PER_HOUR = 10;
+export const ALERT_COOLDOWN_MS = 60 * 60 * 1000;

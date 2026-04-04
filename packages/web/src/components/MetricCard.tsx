@@ -6,26 +6,30 @@ interface MetricCardProps {
 }
 
 const statusColors: Record<string, string> = {
-  success: 'var(--color-success)',
-  warning: 'var(--color-warning)',
-  danger: 'var(--color-danger)',
-  info: 'var(--color-info)'
+  success: 'text-emerald-400',
+  warning: 'text-yellow-400',
+  danger: 'text-red-400',
+  info: 'text-blue-400'
+};
+
+const dotColors: Record<string, string> = {
+  success: 'bg-emerald-400',
+  warning: 'bg-yellow-400',
+  danger: 'bg-red-400',
+  info: 'bg-blue-400'
 };
 
 export function MetricCard({ title, value, subtitle, status }: MetricCardProps) {
   return (
-    <div className="metric-card">
-      <div className="metric-header">
-        <span className="metric-title">{title}</span>
-        <span
-          className="metric-status-dot"
-          style={{ backgroundColor: statusColors[status] }}
-        />
+    <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs text-slate-400 uppercase tracking-wide">{title}</span>
+        <span className={`w-2 h-2 rounded-full ${dotColors[status]}`} />
       </div>
-      <div className="metric-value" style={{ color: statusColors[status] }}>
+      <div className={`text-2xl font-bold mb-1 ${statusColors[status]}`}>
         {value}
       </div>
-      {subtitle && <div className="metric-subtitle">{subtitle}</div>}
+      {subtitle && <div className="text-xs text-slate-500">{subtitle}</div>}
     </div>
   );
 }

@@ -17,6 +17,7 @@ model User {
   passwordHash  String?
   googleId      String?   @unique
   avatarUrl     String?
+  role          UserRole  @default(USER)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -24,6 +25,8 @@ model User {
   alerts        PriceAlert[]
   analyses      AIAnalysis[]
   digestPrefs   DigestPreference?
+  refreshTokens RefreshToken[]
+  apiKeys       ApiKey[]
 
   @@index([email])
   @@index([googleId])
@@ -115,20 +118,25 @@ model AIAnalysis {
 }
 
 model PriceAlert {
-  id            String    @id @default(uuid())
-  userId        String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  stockId       String
-  stock         Stock     @relation(fields: [stockId], references: [id], onDelete: Cascade)
-  targetPrice   Decimal   @db.Decimal(10, 2)
-  condition     AlertCondition
-  isActive      Boolean   @default(true)
-  triggeredAt   DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                    String    @id @default(uuid())
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stockId               String
+  stock                 Stock     @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  targetPrice           Decimal   @db.Decimal(10, 2)
+  condition             AlertCondition
+  alertType             AlertType @default(ONE_TIME)
+  isActive              Boolean   @default(true)
+  triggeredAt           DateTime?
+  expiresAt             DateTime?
+  cooldownUntil         DateTime?
+  notificationChannels  String[]  @default(["in_app"])
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   @@index([userId, isActive])
   @@index([stockId])
+  @@index([isActive, expiresAt])
 }
 
 model NewsArticle {
@@ -164,6 +172,42 @@ model DigestPreference {
   @@index([userId])
 }
 
+model RefreshToken {
+  id        String   @id @default(uuid())
+  jti       String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([jti])
+  @@index([expiresAt])
+}
+
+model ApiKey {
+  id        String   @id @default(uuid())
+  keyHash   String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  role      UserRole @default(USER)
+  expiresAt DateTime?
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  lastUsedAt DateTime?
+
+  @@index([userId])
+  @@index([keyHash])
+}
+
+enum UserRole {
+  ADMIN
+  USER
+  SERVICE
+}
+
 enum AnalysisType {
   TECHNICAL
   FUNDAMENTAL
@@ -189,4 +233,10 @@ enum AlertCondition {
   ABOVE
   BELOW
   PERCENT_CHANGE
+}
+
+enum AlertType {
+  ONE_TIME
+  RECURRING
+  EXPIRING
 }

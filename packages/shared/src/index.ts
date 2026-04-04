@@ -1,5 +1,6 @@
 export { TtlCache } from './cache.js';
-export { SIGNAL_TTL_MS, CACHE_TTL_MS } from './config.js';
+export { SIGNAL_TTL_MS, CACHE_TTL_MS, loadConfig, getConfig, resetConfig } from './config.js';
+export type { EnvConfig } from './config.js';
 export { FanoutWorker } from './fanout.js';
 export type {
   DeliveryChannel,

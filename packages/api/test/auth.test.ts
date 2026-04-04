@@ -155,7 +155,7 @@ describe('Auth Middleware', () => {
     expect(response.statusCode).toBe(200);
   });
 
-  it('should allow access with X-API-Key header', async () => {
+  it('should reject unregistered X-API-Key header', async () => {
     const server = buildServer();
     const response = await server.inject({
       method: 'GET',
@@ -165,6 +165,8 @@ describe('Auth Middleware', () => {
       }
     });
 
-    expect(response.statusCode).toBe(200);
+    expect(response.statusCode).toBe(401);
+    const body = JSON.parse(response.body);
+    expect(body.error).toBe('Unauthorized');
   });
 });

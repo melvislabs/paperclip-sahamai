@@ -10,7 +10,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@sahamai/shared": "0.1.0"
+    "@sahamai/shared": "0.1.0",
+    "@sahamai/api": "0.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",

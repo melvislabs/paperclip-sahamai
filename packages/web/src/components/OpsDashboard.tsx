@@ -10,15 +10,21 @@ interface OpsDashboardProps {
 
 export function OpsDashboard({ metrics, alerts, slo }: OpsDashboardProps) {
   if (!metrics) {
-    return <div className="empty-state"><p>No metrics available</p></div>;
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="text-center py-12 text-slate-500">
+          <p>No metrics available</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="dashboard">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
       {slo && (
-        <section className="ops-section">
-          <h2>Service Level Objectives</h2>
-          <div className="slo-grid">
+        <section>
+          <h2 className="text-lg font-semibold text-slate-100 pb-2 mb-4 border-b border-slate-700">Service Level Objectives</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <MetricCard
               title="API Error Rate"
               value={`${(slo.apiErrorRate * 100).toFixed(2)}%`}
@@ -38,9 +44,9 @@ export function OpsDashboard({ metrics, alerts, slo }: OpsDashboardProps) {
         </section>
       )}
 
-      <section className="ops-section">
-        <h2>HTTP Metrics</h2>
-        <div className="metrics-grid">
+      <section>
+        <h2 className="text-lg font-semibold text-slate-100 pb-2 mb-4 border-b border-slate-700">HTTP Metrics</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             title="Requests (5m)"
             value={metrics.http.requests.toString()}
@@ -65,9 +71,9 @@ export function OpsDashboard({ metrics, alerts, slo }: OpsDashboardProps) {
       </section>
 
       {metrics.freshness && (
-        <section className="ops-section">
-          <h2>Signal Freshness</h2>
-          <div className="metrics-grid">
+        <section>
+          <h2 className="text-lg font-semibold text-slate-100 pb-2 mb-4 border-b border-slate-700">Signal Freshness</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <MetricCard
               title="Total Signals"
               value={metrics.freshness.total.toString()}
@@ -88,9 +94,9 @@ export function OpsDashboard({ metrics, alerts, slo }: OpsDashboardProps) {
       )}
 
       {metrics.delivery.channels.length > 0 && (
-        <section className="ops-section">
-          <h2>Delivery Channels</h2>
-          <div className="metrics-grid">
+        <section>
+          <h2 className="text-lg font-semibold text-slate-100 pb-2 mb-4 border-b border-slate-700">Delivery Channels</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {metrics.delivery.channels.map((channel) => (
               <MetricCard
                 key={channel.channel}
@@ -104,9 +110,9 @@ export function OpsDashboard({ metrics, alerts, slo }: OpsDashboardProps) {
         </section>
       )}
 
-      <section className="ops-section">
-        <h2>Model Usage (1h)</h2>
-        <div className="metrics-grid">
+      <section>
+        <h2 className="text-lg font-semibold text-slate-100 pb-2 mb-4 border-b border-slate-700">Model Usage (1h)</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <MetricCard
             title="Cost"
             value={`$${metrics.modelUsage.costUsd.toFixed(2)}`}
@@ -126,9 +132,9 @@ export function OpsDashboard({ metrics, alerts, slo }: OpsDashboardProps) {
       </section>
 
       {alerts.length > 0 && (
-        <section className="ops-section">
-          <h2>Active Alerts ({alerts.length})</h2>
-          <div className="alerts-list">
+        <section>
+          <h2 className="text-lg font-semibold text-slate-100 pb-2 mb-4 border-b border-slate-700">Active Alerts ({alerts.length})</h2>
+          <div className="space-y-3">
             {alerts.map((alert, index) => (
               <AlertItem key={`${alert.code}-${index}`} alert={alert} />
             ))}

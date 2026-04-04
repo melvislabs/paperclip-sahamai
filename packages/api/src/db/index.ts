@@ -1,13 +1,21 @@
-// Database client placeholder - not yet wired into the API
-// Prisma 7 requires a database adapter (e.g., @prisma/adapter-pg)
-// This module exists to allow the build to pass until DB integration is complete
+import { PrismaClient } from '../generated/prisma/client.js';
+import { PrismaPg } from '@prisma/adapter-pg';
+import pg from 'pg';
 
-export type PrismaClient = never;
+const { Pool } = pg;
 
-export function getPrismaClient(): never {
-  throw new Error('Database not configured. Install a Prisma adapter and set DATABASE_URL.')
+let prisma: PrismaClient | null = null;
+
+export function getPrismaClient(): PrismaClient {
+  if (!prisma) {
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+    });
+    const adapter = new PrismaPg(pool);
+    prisma = new PrismaClient({ adapter });
+  }
+  return prisma;
 }
 
-export const prisma = getPrismaClient();
-
-export default prisma;
+export { PrismaClient };
+export default getPrismaClient();
