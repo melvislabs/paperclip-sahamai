@@ -56,8 +56,12 @@ jobs:
       - name: Build api
         run: npm run build -w @sahamai/api
 
-      - name: Test
+      - name: Test with coverage
         run: npm test
+
+      - name: Shared coverage report
+        run: npm run test:coverage -w @sahamai/shared
+        continue-on-error: true
 
       - name: Runtime smoke check
         run: npm run smoke:runtime -w @sahamai/api

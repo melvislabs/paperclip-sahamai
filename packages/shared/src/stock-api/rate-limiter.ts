@@ -10,12 +10,12 @@ export class RateLimiter {
     requestsPerMinute: number,
     options: { now?: () => number; sleep?: (ms: number) => Promise<void> } = {}
   ) {
-    this.maxTokens = requestsPerMinute;
-    this.tokens = requestsPerMinute;
-    this.lastRefill = Date.now();
-    this.refillIntervalMs = 60_000 / requestsPerMinute;
     this.now = options.now ?? (() => Date.now());
     this.sleep = options.sleep ?? ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)));
+    this.maxTokens = requestsPerMinute;
+    this.tokens = requestsPerMinute;
+    this.lastRefill = this.now();
+    this.refillIntervalMs = 60_000 / requestsPerMinute;
   }
 
   private refill(): void {

@@ -1,7 +1,20 @@
 import type { FastifyRequest, FastifyReply, FastifyInstance, FastifySchema } from 'fastify';
-import { verifyAccessToken } from './utils.js';
+import { Type } from '@sinclair/typebox';
+import { verifyAccessToken, generateAccessToken, generateRefreshToken, verifyRefreshToken, hashPassword, verifyPassword, generateApiKey } from './utils.js';
 import { hasRole } from './utils.js';
-import type { TokenPayload, UserRole } from './types.js';
+import type { TokenPayload, UserRole, AuthResponse, CreateApiKeyResponse } from './types.js';
+import { getPrismaClient } from '../db/index.js';
+import bcrypt from 'bcrypt';
+import {
+  RegisterBodySchema,
+  LoginBodySchema,
+  RefreshBodySchema,
+  CreateApiKeyBodySchema,
+  AuthResponseSchema,
+  ApiKeyResponseSchema,
+  ErrorSchema,
+  ValidationErrorSchema
+} from './schemas.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -9,21 +22,35 @@ declare module 'fastify' {
   }
 }
 
-export function authMiddleware(request: FastifyRequest, reply: FastifyReply) {
+const roleMap: Record<string, 'ADMIN' | 'USER' | 'SERVICE'> = {
+  admin: 'ADMIN',
+  user: 'USER',
+  service: 'SERVICE'
+};
+
+const reverseRoleMap: Record<'ADMIN' | 'USER' | 'SERVICE', UserRole> = {
+  ADMIN: 'admin',
+  USER: 'user',
+  SERVICE: 'service'
+};
+
+export function authMiddleware(request: FastifyRequest, reply: FastifyReply): void {
   const authHeader = request.headers.authorization;
   if (!authHeader) {
-    return reply.code(401).send({
+    reply.code(401).send({
       error: 'Unauthorized',
       message: 'Missing Authorization header'
     });
+    return;
   }
 
   const parts = authHeader.split(' ');
   if (parts.length !== 2 || parts[0] !== 'Bearer') {
-    return reply.code(401).send({
+    reply.code(401).send({
       error: 'Unauthorized',
       message: 'Invalid Authorization header format. Use: Bearer <token>'
     });
+    return;
   }
 
   try {
@@ -31,10 +58,11 @@ export function authMiddleware(request: FastifyRequest, reply: FastifyReply) {
     const payload = verifyAccessToken(token);
     request.user = payload;
   } catch (error) {
-    return reply.code(401).send({
+    reply.code(401).send({
       error: 'Unauthorized',
       message: error instanceof Error ? error.message : 'Invalid or expired token'
     });
+    return;
   }
 }
 
@@ -56,8 +84,11 @@ export function requireRole(requiredRole: UserRole) {
   };
 }
 
-export function apiKeyMiddleware(request: FastifyRequest, reply: FastifyReply) {
-  const apiKey = request.headers['x-api-key'];
+export async function apiKeyMiddleware(request: FastifyRequest, reply: FastifyReply) {
+  const apiKey = Array.isArray(request.headers['x-api-key'])
+    ? request.headers['x-api-key'][0]
+    : request.headers['x-api-key'];
+
   if (!apiKey) {
     return reply.code(401).send({
       error: 'Unauthorized',
@@ -65,63 +96,135 @@ export function apiKeyMiddleware(request: FastifyRequest, reply: FastifyReply) {
     });
   }
 
+  const keyUser = await verifyApiKey(apiKey);
+  if (!keyUser) {
+    return reply.code(401).send({
+      error: 'Unauthorized',
+      message: 'Invalid or expired API key'
+    });
+  }
+
   request.user = {
-    userId: 'api-key-service',
-    email: 'service@internal',
-    role: 'service'
+    userId: keyUser.userId,
+    email: 'api-key@internal',
+    role: keyUser.role
   };
 }
 
 export function registerAuthRoutes(app: FastifyInstance) {
   app.post('/v1/auth/register', {
+    bodyLimit: 10240,
     schema: {
-      body: {
-        type: 'object',
-        required: ['email', 'password'],
-        properties: {
-          email: { type: 'string', format: 'email' },
-          password: { type: 'string', minLength: 8 },
-          role: { type: 'string', enum: ['admin', 'user', 'service'] }
-        }
+      tags: ['Auth'],
+      description: 'Register a new user account',
+      body: RegisterBodySchema,
+      response: {
+        201: AuthResponseSchema,
+        400: ValidationErrorSchema,
+        409: ErrorSchema
       }
     }
   }, async (request, reply) => {
     const body = request.body as { email: string; password: string; role?: UserRole };
+    const prisma = getPrismaClient();
 
-    return reply.code(501).send({
-      error: 'Not Implemented',
-      message: 'User registration requires database. Set up Prisma migrations first.'
+    const existing = await prisma.user.findUnique({ where: { email: body.email } });
+    if (existing) {
+      return reply.code(409).send({
+        error: 'Conflict',
+        message: 'User with this email already exists'
+      });
+    }
+
+    const passwordHash = await hashPassword(body.password);
+    const dbRole = roleMap[body.role || 'user'] || 'USER';
+
+    const user = await prisma.user.create({
+      data: {
+        email: body.email,
+        passwordHash,
+        role: dbRole,
+      }
     });
+
+    const authUser = { id: user.id, email: user.email, role: reverseRoleMap[user.role] };
+    const token = generateAccessToken(authUser);
+    const { token: refreshToken, jti } = generateRefreshToken(user.id);
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    await prisma.refreshToken.create({
+      data: { jti, userId: user.id, expiresAt }
+    });
+
+    return reply.code(201).send({
+      user: { id: user.id, email: user.email, role: reverseRoleMap[user.role] },
+      token,
+      refreshToken,
+    } as AuthResponse);
   });
 
   app.post('/v1/auth/login', {
+    bodyLimit: 10240,
     schema: {
-      body: {
-        type: 'object',
-        required: ['email', 'password'],
-        properties: {
-          email: { type: 'string', format: 'email' },
-          password: { type: 'string' }
-        }
+      tags: ['Auth'],
+      description: 'Login with email and password',
+      body: LoginBodySchema,
+      response: {
+        200: AuthResponseSchema,
+        400: ValidationErrorSchema,
+        401: ErrorSchema
       }
     }
   }, async (request, reply) => {
     const body = request.body as { email: string; password: string };
+    const prisma = getPrismaClient();
 
-    return reply.code(501).send({
-      error: 'Not Implemented',
-      message: 'User login requires database. Set up Prisma migrations first.'
+    const user = await prisma.user.findUnique({ where: { email: body.email } });
+    if (!user || !user.passwordHash) {
+      return reply.code(401).send({
+        error: 'Unauthorized',
+        message: 'Invalid email or password'
+      });
+    }
+
+    const valid = await verifyPassword(body.password, user.passwordHash);
+    if (!valid) {
+      return reply.code(401).send({
+        error: 'Unauthorized',
+        message: 'Invalid email or password'
+      });
+    }
+
+    const authUser = { id: user.id, email: user.email, role: reverseRoleMap[user.role] };
+    const token = generateAccessToken(authUser);
+    const { token: refreshToken, jti } = generateRefreshToken(user.id);
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    await prisma.refreshToken.create({
+      data: { jti, userId: user.id, expiresAt }
     });
+
+    return reply.send({
+      user: { id: user.id, email: user.email, role: reverseRoleMap[user.role] },
+      token,
+      refreshToken,
+    } as AuthResponse);
   });
 
   app.post('/v1/auth/refresh', {
+    bodyLimit: 10240,
     schema: {
-      body: {
-        type: 'object',
-        required: ['refreshToken'],
-        properties: {
-          refreshToken: { type: 'string', minLength: 1 }
-        }
+      tags: ['Auth'],
+      description: 'Refresh access token using refresh token',
+      body: RefreshBodySchema,
+      response: {
+        200: AuthResponseSchema,
+        400: ValidationErrorSchema,
+        401: ErrorSchema
       }
     }
   }, async (request, reply) => {
@@ -133,23 +236,74 @@ export function registerAuthRoutes(app: FastifyInstance) {
       });
     }
 
-    return reply.code(501).send({
-      error: 'Not Implemented',
-      message: 'Token refresh requires database for refresh token tracking.'
+    const prisma = getPrismaClient();
+
+    let payload;
+    try {
+      payload = verifyRefreshToken(body.refreshToken);
+    } catch {
+      return reply.code(401).send({
+        error: 'Unauthorized',
+        message: 'Invalid or expired refresh token'
+      });
+    }
+
+    const storedToken = await prisma.refreshToken.findUnique({
+      where: { jti: payload.jti }
     });
+
+    if (!storedToken || storedToken.revoked || storedToken.expiresAt < new Date()) {
+      return reply.code(401).send({
+        error: 'Unauthorized',
+        message: 'Refresh token has been revoked or expired'
+      });
+    }
+
+    await prisma.refreshToken.update({
+      where: { jti: payload.jti },
+      data: { revoked: true }
+    });
+
+    const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+    if (!user) {
+      return reply.code(401).send({
+        error: 'Unauthorized',
+        message: 'User not found'
+      });
+    }
+
+    const authUser = { id: user.id, email: user.email, role: reverseRoleMap[user.role] };
+    const token = generateAccessToken(authUser);
+    const { token: newRefreshToken, jti } = generateRefreshToken(user.id);
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    await prisma.refreshToken.create({
+      data: { jti, userId: user.id, expiresAt }
+    });
+
+    return reply.send({
+      user: { id: user.id, email: user.email, role: reverseRoleMap[user.role] },
+      token,
+      refreshToken: newRefreshToken,
+    } as AuthResponse);
   });
 
   app.post('/v1/auth/api-keys', {
+    preHandler: [authMiddleware],
+    bodyLimit: 10240,
     schema: {
-      body: {
-        type: 'object',
-        required: ['name'],
-        properties: {
-          name: { type: 'string', minLength: 1, maxLength: 100 },
-          role: { type: 'string', enum: ['admin', 'user', 'service'] },
-          expiresAt: { type: 'string', format: 'date-time' }
-        }
-      }
+      tags: ['Auth'],
+      description: 'Create a new API key (admin only)',
+      body: CreateApiKeyBodySchema,
+      response: {
+        201: ApiKeyResponseSchema,
+        400: ValidationErrorSchema,
+        401: ErrorSchema,
+        403: ErrorSchema
+      },
+      security: [{ bearerAuth: [] }]
     }
   }, async (request, reply) => {
     if (!request.user) {
@@ -166,11 +320,184 @@ export function registerAuthRoutes(app: FastifyInstance) {
       });
     }
 
-    return reply.code(501).send({
-      error: 'Not Implemented',
-      message: 'API key management requires database.'
+    const body = request.body as { name: string; role?: UserRole; expiresAt?: string };
+    const prisma = getPrismaClient();
+    const { rawKey, keyHash } = generateApiKey();
+
+    const dbRole = roleMap[body.role || 'service'] || 'SERVICE';
+    const expiresAt = body.expiresAt ? new Date(body.expiresAt) : null;
+
+    const apiKey = await prisma.apiKey.create({
+      data: {
+        keyHash,
+        userId: request.user.userId,
+        name: body.name,
+        role: dbRole,
+        expiresAt,
+      }
+    });
+
+    return reply.code(201).send({
+      apiKey: {
+        id: apiKey.id,
+        keyHash: apiKey.keyHash,
+        userId: apiKey.userId,
+        name: apiKey.name,
+        role: reverseRoleMap[apiKey.role],
+        createdAt: apiKey.createdAt.toISOString(),
+        expiresAt: apiKey.expiresAt?.toISOString(),
+      },
+      rawKey,
+    } as CreateApiKeyResponse);
+  });
+
+  app.post('/v1/auth/logout', {
+    preHandler: [authMiddleware],
+    schema: {
+      tags: ['Auth'],
+      description: 'Logout and revoke refresh token',
+      body: RefreshBodySchema,
+      response: {
+        200: Type.Object({ message: Type.String() }),
+        400: ValidationErrorSchema,
+        401: ErrorSchema,
+        403: ErrorSchema
+      },
+      security: [{ bearerAuth: [] }]
+    }
+  }, async (request, reply) => {
+    if (!request.user) {
+      return reply.code(401).send({
+        error: 'Unauthorized',
+        message: 'Authentication required'
+      });
+    }
+
+    const body = request.body as { refreshToken?: string };
+    if (!body?.refreshToken) {
+      return reply.code(400).send({
+        error: 'Bad Request',
+        message: 'refreshToken is required'
+      });
+    }
+
+    const prisma = getPrismaClient();
+
+    try {
+      const payload = verifyRefreshToken(body.refreshToken);
+
+      if (payload.userId !== request.user.userId) {
+        return reply.code(403).send({
+          error: 'Forbidden',
+          message: 'Cannot revoke tokens belonging to other users'
+        });
+      }
+
+      await prisma.refreshToken.updateMany({
+        where: {
+          jti: payload.jti,
+          userId: request.user.userId,
+          revoked: false
+        },
+        data: { revoked: true }
+      });
+
+      return reply.send({
+        message: 'Successfully logged out'
+      });
+    } catch {
+      return reply.code(401).send({
+        error: 'Unauthorized',
+        message: 'Invalid refresh token'
+      });
+    }
+  });
+
+  app.delete('/v1/auth/api-keys/:keyId', {
+    preHandler: [authMiddleware, requireRole('admin')],
+    schema: {
+      tags: ['Auth'],
+      description: 'Revoke an API key (admin only)',
+      params: {
+        type: 'object',
+        properties: {
+          keyId: { type: 'string', format: 'uuid' }
+        },
+        required: ['keyId']
+      },
+      response: {
+        200: Type.Object({ message: Type.String() }),
+        401: ErrorSchema,
+        403: ErrorSchema,
+        404: ErrorSchema
+      },
+      security: [{ bearerAuth: [] }]
+    }
+  }, async (request, reply) => {
+    const prisma = getPrismaClient();
+    const { keyId } = request.params as { keyId: string };
+
+    const apiKey = await prisma.apiKey.findUnique({ where: { id: keyId } });
+    if (!apiKey) {
+      return reply.code(404).send({
+        error: 'Not Found',
+        message: 'API key not found'
+      });
+    }
+
+    await prisma.apiKey.update({
+      where: { id: keyId },
+      data: { revoked: true }
+    });
+
+    return reply.send({
+      message: 'API key revoked successfully'
     });
   });
+}
+
+async function verifyApiKey(rawKey: string): Promise<{ userId: string; role: UserRole } | null> {
+  const prisma = getPrismaClient();
+
+  let apiKeys;
+  try {
+    apiKeys = await prisma.apiKey.findMany({
+      where: { revoked: false }
+    });
+  } catch {
+    return null;
+  }
+
+  for (const apiKey of apiKeys) {
+    const matches = await bcrypt.compare(rawKey, apiKey.keyHash);
+    if (matches) {
+      if (apiKey.expiresAt && apiKey.expiresAt < new Date()) {
+        try {
+          await prisma.apiKey.update({
+            where: { id: apiKey.id },
+            data: { revoked: true }
+          });
+        } catch {
+        }
+        return null;
+      }
+
+      try {
+        await prisma.apiKey.update({
+          where: { id: apiKey.id },
+          data: { lastUsedAt: new Date() }
+        });
+      } catch {
+      }
+
+      return {
+        userId: apiKey.userId,
+        role: reverseRoleMap[apiKey.role]
+      };
+    }
+  }
+
+  return null;
 }
 
 export function protectRoutes(app: FastifyInstance, routes: string[], options?: { skipAuth?: string[] }) {
@@ -185,13 +512,30 @@ export function protectRoutes(app: FastifyInstance, routes: string[], options?: 
 
     if (routes.some(route => url.startsWith(route))) {
       const authHeader = request.headers.authorization;
-      const apiKey = request.headers['x-api-key'];
+      const apiKey = Array.isArray(request.headers['x-api-key'])
+        ? request.headers['x-api-key'][0]
+        : request.headers['x-api-key'];
 
       if (apiKey) {
+        let keyUser;
+        try {
+          keyUser = await verifyApiKey(apiKey);
+        } catch {
+          return reply.code(401).send({
+            error: 'Unauthorized',
+            message: 'Invalid or expired API key'
+          });
+        }
+        if (!keyUser) {
+          return reply.code(401).send({
+            error: 'Unauthorized',
+            message: 'Invalid or expired API key'
+          });
+        }
         request.user = {
-          userId: 'api-key-service',
-          email: 'service@internal',
-          role: 'service'
+          userId: keyUser.userId,
+          email: 'api-key@internal',
+          role: keyUser.role
         };
         return;
       }

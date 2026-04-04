@@ -109,8 +109,11 @@ export class ObservabilityHub {
     const latestFreshness = this.freshness[this.freshness.length - 1] ?? null;
 
     const errorCount = http5m.filter((item) => item.statusCode >= 500).length;
-    const avgLatencyMs =
-      http5m.length === 0 ? 0 : http5m.reduce((sum, item) => sum + item.latencyMs, 0) / http5m.length;
+    const latencies = http5m.map((item) => item.latencyMs).sort((a, b) => a - b);
+    const avgLatencyMs = http5m.length === 0 ? 0 : latencies.reduce((sum, item) => sum + item, 0) / latencies.length;
+    const p50LatencyMs = latencies.length === 0 ? 0 : latencies[Math.floor(latencies.length * 0.5)];
+    const p95LatencyMs = latencies.length === 0 ? 0 : latencies[Math.max(0, Math.ceil(latencies.length * 0.95) - 1)];
+    const p99LatencyMs = latencies.length === 0 ? 0 : latencies[Math.max(0, Math.ceil(latencies.length * 0.99) - 1)];
 
     const byChannel = new Map<DeliveryChannel, { total: number; ok: number; p95Candidates: number[] }>();
     for (const metric of delivery15m) {
@@ -152,7 +155,10 @@ export class ObservabilityHub {
         requests: http5m.length,
         errors5xx: errorCount,
         errorRate: http5m.length === 0 ? 0 : errorCount / http5m.length,
-        avgLatencyMs
+        avgLatencyMs,
+        p50LatencyMs,
+        p95LatencyMs,
+        p99LatencyMs
       },
       freshness: latestFreshness
         ? {
