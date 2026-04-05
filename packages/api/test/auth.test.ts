@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { hashPassword, verifyPassword, generateAccessToken, generateRefreshToken, verifyAccessToken, verifyRefreshToken, hasRole, generateApiKey } from '../src/auth/utils.js';
+import { hashPassword, verifyPassword, generateAccessToken, generateRefreshToken, verifyAccessToken, verifyRefreshToken, hasRole, generateApiKey, validatePasswordStrength } from '../src/auth/utils.js';
 import { buildServer } from '../src/server.js';
 
 describe('Auth Utils', () => {
@@ -95,6 +95,39 @@ describe('Auth Utils', () => {
       expect(rawKey).toMatch(/^sk_[a-f0-9]{32}$/);
       expect(keyHash).not.toBe(rawKey);
       expect(keyHash.startsWith('$2')).toBe(true);
+    });
+  });
+
+  describe('validatePasswordStrength', () => {
+    it('should reject password shorter than 8 characters', () => {
+      const result = validatePasswordStrength('Ab1');
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain('Password must be at least 8 characters long');
+    });
+
+    it('should reject password without uppercase', () => {
+      const result = validatePasswordStrength('password1');
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain('Password must contain at least one uppercase letter');
+    });
+
+    it('should reject password without number', () => {
+      const result = validatePasswordStrength('Password');
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain('Password must contain at least one number');
+    });
+
+    it('should accept valid password', () => {
+      const result = validatePasswordStrength('ValidPass1!');
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('should reject password longer than 128 characters', () => {
+      const longPassword = 'A' + '1'.repeat(128);
+      const result = validatePasswordStrength(longPassword);
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain('Password must be at most 128 characters long');
     });
   });
 });

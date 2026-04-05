@@ -24,12 +24,15 @@ COPY packages/worker/test ./packages/worker/test
 
 RUN npm run build -w @sahamai/shared
 RUN npm run build -w @sahamai/worker
+RUN npx prisma generate --schema=packages/api/prisma/schema.prisma
 RUN npm run build -w @sahamai/api
 RUN npm prune --omit=dev
 
 FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
+
+RUN apk add --no-cache postgresql-client
 
 COPY --from=build /app/package*.json ./
 COPY --from=build /app/node_modules ./node_modules

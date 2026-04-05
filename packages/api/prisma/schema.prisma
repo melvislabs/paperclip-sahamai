@@ -18,6 +18,8 @@ model User {
   googleId      String?   @unique
   avatarUrl     String?
   role          UserRole  @default(USER)
+  failedLoginAttempts Int  @default(0)
+  lockedUntil   DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -27,6 +29,8 @@ model User {
   digestPrefs   DigestPreference?
   refreshTokens RefreshToken[]
   apiKeys       ApiKey[]
+  brokerReviews BrokerReview[]
+  watchlistItems WatchlistItem[]
 
   @@index([email])
   @@index([googleId])
@@ -45,6 +49,18 @@ model Portfolio {
   holdings      Holding[]
 
   @@index([userId])
+}
+
+model WatchlistItem {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol     String
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, symbol])
+  @@index([userId, sortOrder])
 }
 
 model Holding {
@@ -166,6 +182,7 @@ model DigestPreference {
   includeAlerts Boolean   @default(true)
   includeAnalysis Boolean @default(true)
   includeMarketSummary Boolean @default(true)
+  lastDigestSentDate String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -200,6 +217,99 @@ model ApiKey {
 
   @@index([userId])
   @@index([keyHash])
+}
+
+// Broker Information Models
+model Broker {
+  id                    String    @id @default(uuid())
+  name                  String    @unique
+  legalName             String
+  establishedYear       Int
+  ojkLicenseNumber      String    @unique
+  ojkLicenseStatus      OjkLicenseStatus
+  website               String
+  logoUrl               String?
+  headquarters          Json
+  regulatoryInfo        Json
+  contactInfo           Json
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  fees                  BrokerFees?
+  features              BrokerFeatures?
+  reviews               BrokerReview[]
+  performanceMetrics    BrokerPerformance[]
+
+  @@index([name])
+  @@index([ojkLicenseStatus])
+}
+
+model BrokerFees {
+  id            String    @id @default(uuid())
+  brokerId      String    @unique
+  broker        Broker    @relation(fields: [brokerId], references: [id], onDelete: Cascade)
+  tradingFees   Json
+  accountFees   Json
+  otherFees     Json
+  promotions    Json      @default("[]")
+  effectiveDate  DateTime
+  updatedAt     DateTime  @updatedAt
+
+  @@index([brokerId])
+}
+
+model BrokerFeatures {
+  id              String    @id @default(uuid())
+  brokerId        String    @unique
+  broker          Broker    @relation(fields: [brokerId], references: [id], onDelete: Cascade)
+  tradingPlatforms Json
+  researchTools   Json
+  orderTypes      Json
+  accountTypes    Json
+  apiAccess       Json
+  education       Json
+  lastUpdated     DateTime  @default(now())
+
+  @@index([brokerId])
+}
+
+model BrokerReview {
+  id                    String    @id @default(uuid())
+  brokerId              String
+  broker                Broker    @relation(fields: [brokerId], references: [id], onDelete: Cascade)
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAccountType       String
+  tradingExperience     String
+  tradingFrequency      String
+  overallRating         Int       @default(0)
+  criteriaRatings       Json
+  pros                  String[]  @default([])
+  cons                  String[]  @default([])
+  detailedReview        String?
+  wouldRecommend        Boolean   @default(false)
+  verifiedAccount       Boolean   @default(false)
+  helpfulVotes          Int       @default(0)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([brokerId])
+  @@index([userId])
+  @@index([overallRating])
+}
+
+model BrokerPerformance {
+  id                      String    @id @default(uuid())
+  brokerId                String
+  broker                  Broker    @relation(fields: [brokerId], references: [id], onDelete: Cascade)
+  date                    DateTime
+  systemMetrics           Json
+  tradingMetrics          Json
+  customerServiceMetrics  Json
+  lastUpdated             DateTime  @default(now())
+
+  @@index([brokerId])
+  @@index([date])
 }
 
 enum UserRole {
@@ -239,4 +349,10 @@ enum AlertType {
   ONE_TIME
   RECURRING
   EXPIRING
+}
+
+enum OjkLicenseStatus {
+  ACTIVE
+  SUSPENDED
+  REVOKED
 }

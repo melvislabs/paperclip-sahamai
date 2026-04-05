@@ -5,11 +5,12 @@ export interface LLMProvider {
 }
 
 export interface LLMProviderOptions {
-  apiKey: string;
+  apiKey?: string;
   model?: string;
   baseUrl?: string;
   maxTokens?: number;
   temperature?: number;
+  timeoutMs?: number;
 }
 
 const SYSTEM_PROMPT = `You are a professional financial analyst specializing in Indonesian stock market (IHSG) analysis. 
@@ -125,43 +126,62 @@ export class OpenAIProvider implements LLMProvider {
   private readonly baseUrl: string;
   private readonly maxTokens: number;
   private readonly temperature: number;
+  private readonly timeoutMs: number;
 
   constructor(options: LLMProviderOptions) {
+    if (!options.apiKey) {
+      throw new Error('OpenAI API key is required');
+    }
     this.apiKey = options.apiKey;
     this.model = options.model ?? 'gpt-4o-mini';
     this.baseUrl = options.baseUrl ?? 'https://api.openai.com/v1';
     this.maxTokens = options.maxTokens ?? 1000;
     this.temperature = options.temperature ?? 0.3;
+    this.timeoutMs = options.timeoutMs ?? 30000;
   }
 
   async analyze(request: LLMAnalysisRequest): Promise<LLMAnalysisResult> {
-    const response = await fetch(`${this.baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`
-      },
-      body: JSON.stringify({
-        model: this.model,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: buildUserPrompt(request) }
-        ],
-        max_tokens: this.maxTokens,
-        temperature: this.temperature,
-        response_format: { type: 'json_object' }
-      })
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`LLM API error (${response.status}): ${errorText}`);
+    try {
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify({
+          model: this.model,
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: buildUserPrompt(request) }
+          ],
+          max_tokens: this.maxTokens,
+          temperature: this.temperature,
+          response_format: { type: 'json_object' }
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`OpenAI API error (${response.status}): ${errorText}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content ?? '{}';
+
+      return parseLLMResponse(content);
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(`OpenAI API request timed out after ${this.timeoutMs}ms`);
+      }
+      throw error;
     }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content ?? '{}';
-
-    return parseLLMResponse(content);
   }
 }
 
@@ -196,5 +216,247 @@ export class MockLLMProvider implements LLMProvider {
       },
       reasoning: `Based on technical indicators showing ${bias.toLowerCase()} bias (${technicalAnalysis.summary.bullishSignals} bullish vs ${technicalAnalysis.summary.bearishSignals} bearish signals) and sentiment score of ${sentimentScore.toFixed(2)}, the analysis suggests ${bias === 'BULLISH' ? 'potential upside' : bias === 'BEARISH' ? 'potential downside' : 'neutral outlook'}. This is not financial advice.`
     };
+  }
+}
+
+export class OllamaProvider implements LLMProvider {
+  private readonly baseUrl: string;
+  private readonly model: string;
+  private readonly maxTokens: number;
+  private readonly temperature: number;
+  private readonly timeoutMs: number;
+
+  constructor(options: LLMProviderOptions) {
+    this.baseUrl = options.baseUrl ?? 'http://localhost:11434';
+    this.model = options.model ?? 'llama3.2:3b';
+    this.maxTokens = options.maxTokens ?? 1000;
+    this.temperature = options.temperature ?? 0.3;
+    this.timeoutMs = options.timeoutMs ?? 60000;
+  }
+
+  async analyze(request: LLMAnalysisRequest): Promise<LLMAnalysisResult> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    try {
+      const response = await fetch(`${this.baseUrl}/api/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: this.model,
+          prompt: `${SYSTEM_PROMPT}\n\n${buildUserPrompt(request)}`,
+          stream: false,
+          options: {
+            temperature: this.temperature,
+            num_predict: this.maxTokens,
+          }
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Ollama API error (${response.status}): ${errorText}`);
+      }
+
+      const data = await response.json();
+      const content = data.response ?? '{}';
+
+      return parseLLMResponse(content);
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(`Ollama API request timed out after ${this.timeoutMs}ms`);
+      }
+      throw error;
+    }
+  }
+}
+
+export class OpenRouterProvider implements LLMProvider {
+  private readonly apiKey: string;
+  private readonly model: string;
+  private readonly baseUrl: string;
+  private readonly maxTokens: number;
+  private readonly temperature: number;
+  private readonly timeoutMs: number;
+
+  constructor(options: LLMProviderOptions) {
+    if (!options.apiKey) {
+      throw new Error('OpenRouter API key is required');
+    }
+    this.apiKey = options.apiKey;
+    this.model = options.model ?? 'anthropic/claude-3.5-sonnet';
+    this.baseUrl = options.baseUrl ?? 'https://openrouter.ai/api/v1';
+    this.maxTokens = options.maxTokens ?? 1000;
+    this.temperature = options.temperature ?? 0.3;
+    this.timeoutMs = options.timeoutMs ?? 45000;
+  }
+
+  async analyze(request: LLMAnalysisRequest): Promise<LLMAnalysisResult> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    try {
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`,
+          'HTTP-Referer': 'https://sahamai.com',
+          'X-Title': 'Saham AI - Indonesian Stock Analysis'
+        },
+        body: JSON.stringify({
+          model: this.model,
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: buildUserPrompt(request) }
+          ],
+          max_tokens: this.maxTokens,
+          temperature: this.temperature,
+          response_format: { type: 'json_object' }
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`OpenRouter API error (${response.status}): ${errorText}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content ?? '{}';
+
+      return parseLLMResponse(content);
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(`OpenRouter API request timed out after ${this.timeoutMs}ms`);
+      }
+      throw error;
+    }
+  }
+}
+
+export class OpenCodeProvider implements LLMProvider {
+  private readonly apiKey: string;
+  private readonly model: string;
+  private readonly baseUrl: string;
+  private readonly maxTokens: number;
+  private readonly temperature: number;
+  private readonly timeoutMs: number;
+
+  constructor(options: LLMProviderOptions) {
+    if (!options.apiKey) {
+      throw new Error('OpenCode API key is required');
+    }
+    this.apiKey = options.apiKey;
+    this.model = options.model ?? 'opencode/claude-3.5-sonnet';
+    this.baseUrl = options.baseUrl ?? 'https://api.opencode.ai/v1';
+    this.maxTokens = options.maxTokens ?? 1000;
+    this.temperature = options.temperature ?? 0.3;
+    this.timeoutMs = options.timeoutMs ?? 45000;
+  }
+
+  async analyze(request: LLMAnalysisRequest): Promise<LLMAnalysisResult> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    try {
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify({
+          model: this.model,
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: buildUserPrompt(request) }
+          ],
+          max_tokens: this.maxTokens,
+          temperature: this.temperature,
+          response_format: { type: 'json_object' }
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`OpenCode API error (${response.status}): ${errorText}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content ?? '{}';
+
+      return parseLLMResponse(content);
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(`OpenCode API request timed out after ${this.timeoutMs}ms`);
+      }
+      throw error;
+    }
+  }
+}
+
+export interface FallbackLLMConfig {
+  providers: Array<{
+    provider: LLMProvider;
+    name: string;
+    priority: number;
+  }>;
+  enableFallback: boolean;
+}
+
+export class FallbackLLMProvider implements LLMProvider {
+  private readonly config: FallbackLLMConfig;
+
+  constructor(config: FallbackLLMConfig) {
+    this.config = config;
+  }
+
+  async analyze(request: LLMAnalysisRequest): Promise<LLMAnalysisResult> {
+    if (!this.config.enableFallback || this.config.providers.length === 0) {
+      throw new Error('No LLM providers configured');
+    }
+
+    const sortedProviders = [...this.config.providers].sort((a, b) => a.priority - b.priority);
+    const errors: Array<{ name: string; error: Error }> = [];
+
+    for (const { provider, name } of sortedProviders) {
+      try {
+        console.log(`Attempting LLM analysis with provider: ${name}`);
+        const result = await provider.analyze(request);
+        console.log(`LLM analysis successful with provider: ${name}`);
+        return result;
+      } catch (error) {
+        const errorObj = error instanceof Error ? error : new Error(String(error));
+        errors.push({ name, error: errorObj });
+        console.warn(`LLM provider ${name} failed:`, errorObj.message);
+        
+        continue;
+      }
+    }
+
+    const errorMessages = errors.map(({ name, error }) => `${name}: ${error.message}`).join('; ');
+    throw new Error(`All LLM providers failed. Errors: ${errorMessages}`);
+  }
+
+  getProviderStatus(): Array<{ name: string; priority: number; available: boolean }> {
+    return this.config.providers.map(({ name, priority }) => ({
+      name,
+      priority,
+      available: true
+    }));
   }
 }

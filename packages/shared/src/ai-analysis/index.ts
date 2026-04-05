@@ -12,9 +12,10 @@ import {
 } from './technical.js';
 import type { LLMProvider } from './llm-analyzer.js';
 import { fuseSentiment } from './sentiment-fusion.js';
+import { createLLMProvider, getProviderInfo } from './llm-provider-factory.js';
 
 export interface AIAnalysisServiceOptions {
-  llmProvider: LLMProvider;
+  llmProvider?: LLMProvider;
   now?: () => number;
 }
 
@@ -22,8 +23,8 @@ export class AIAnalysisService {
   private readonly llmProvider: LLMProvider;
   private readonly now: () => number;
 
-  constructor(options: AIAnalysisServiceOptions) {
-    this.llmProvider = options.llmProvider;
+  constructor(options: AIAnalysisServiceOptions = {}) {
+    this.llmProvider = options.llmProvider ?? createLLMProvider();
     this.now = options.now ?? (() => Date.now());
   }
 
@@ -110,7 +111,7 @@ export class AIAnalysisService {
       summary,
       keyPoints,
       metadata: {
-        modelUsed: 'llm-provider',
+        modelUsed: getProviderInfo().primaryProvider,
         dataPoints: priceHistory.length,
         processingTimeMs,
         version: 'ai-analysis-v1'

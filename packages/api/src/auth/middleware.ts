@@ -1,6 +1,6 @@
 import type { FastifyRequest, FastifyReply, FastifyInstance, FastifySchema } from 'fastify';
 import { Type } from '@sinclair/typebox';
-import { verifyAccessToken, generateAccessToken, generateRefreshToken, verifyRefreshToken, hashPassword, verifyPassword, generateApiKey } from './utils.js';
+import { verifyAccessToken, generateAccessToken, generateRefreshToken, verifyRefreshToken, hashPassword, verifyPassword, generateApiKey, validatePasswordStrength } from './utils.js';
 import { hasRole } from './utils.js';
 import type { TokenPayload, UserRole, AuthResponse, CreateApiKeyResponse } from './types.js';
 import { getPrismaClient } from '../db/index.js';
@@ -111,8 +111,11 @@ export async function apiKeyMiddleware(request: FastifyRequest, reply: FastifyRe
   };
 }
 
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000;
+
 export function registerAuthRoutes(app: FastifyInstance) {
-  app.post('/v1/auth/register', {
+  app.post('/register', {
     bodyLimit: 10240,
     schema: {
       tags: ['Auth'],
@@ -128,16 +131,28 @@ export function registerAuthRoutes(app: FastifyInstance) {
     const body = request.body as { email: string; password: string; role?: UserRole };
     const prisma = getPrismaClient();
 
+    const passwordValidation = validatePasswordStrength(body.password);
+    if (!passwordValidation.valid) {
+      return reply.code(400).send({
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+        error: 'Bad Request',
+        message: passwordValidation.errors.join(', ')
+      });
+    }
+
     const existing = await prisma.user.findUnique({ where: { email: body.email } });
     if (existing) {
       return reply.code(409).send({
+        statusCode: 409,
+        code: 'USER_EXISTS',
         error: 'Conflict',
         message: 'User with this email already exists'
       });
     }
 
     const passwordHash = await hashPassword(body.password);
-    const dbRole = roleMap[body.role || 'user'] || 'USER';
+    const dbRole = 'USER';
 
     const user = await prisma.user.create({
       data: {
@@ -158,6 +173,14 @@ export function registerAuthRoutes(app: FastifyInstance) {
       data: { jti, userId: user.id, expiresAt }
     });
 
+    reply.setCookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/v1/auth/refresh',
+      maxAge: 7 * 24 * 60 * 60
+    });
+
     return reply.code(201).send({
       user: { id: user.id, email: user.email, role: reverseRoleMap[user.role] },
       token,
@@ -165,7 +188,7 @@ export function registerAuthRoutes(app: FastifyInstance) {
     } as AuthResponse);
   });
 
-  app.post('/v1/auth/login', {
+  app.post('/login', {
     bodyLimit: 10240,
     schema: {
       tags: ['Auth'],
@@ -174,7 +197,8 @@ export function registerAuthRoutes(app: FastifyInstance) {
       response: {
         200: AuthResponseSchema,
         400: ValidationErrorSchema,
-        401: ErrorSchema
+        401: ErrorSchema,
+        423: ErrorSchema
       }
     }
   }, async (request, reply) => {
@@ -189,13 +213,48 @@ export function registerAuthRoutes(app: FastifyInstance) {
       });
     }
 
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const remainingMs = user.lockedUntil.getTime() - Date.now();
+      return reply.code(423).send({
+        error: 'Locked',
+        message: `Account is locked. Try again in ${Math.ceil(remainingMs / 1000 / 60)} minutes`
+      });
+    }
+
     const valid = await verifyPassword(body.password, user.passwordHash);
     if (!valid) {
+      const newFailedAttempts = (user.failedLoginAttempts || 0) + 1;
+
+      if (newFailedAttempts >= MAX_FAILED_ATTEMPTS) {
+        const lockedUntil = new Date(Date.now() + LOCKOUT_DURATION_MS);
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            failedLoginAttempts: newFailedAttempts,
+            lockedUntil
+          }
+        });
+        return reply.code(423).send({
+          error: 'Locked',
+          message: `Account locked after ${MAX_FAILED_ATTEMPTS} failed attempts. Try again in 15 minutes`
+        });
+      }
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { failedLoginAttempts: newFailedAttempts }
+      });
+
       return reply.code(401).send({
         error: 'Unauthorized',
         message: 'Invalid email or password'
       });
     }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { failedLoginAttempts: 0, lockedUntil: null }
+    });
 
     const authUser = { id: user.id, email: user.email, role: reverseRoleMap[user.role] };
     const token = generateAccessToken(authUser);
@@ -208,6 +267,14 @@ export function registerAuthRoutes(app: FastifyInstance) {
       data: { jti, userId: user.id, expiresAt }
     });
 
+    reply.setCookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/v1/auth/refresh',
+      maxAge: 7 * 24 * 60 * 60
+    });
+
     return reply.send({
       user: { id: user.id, email: user.email, role: reverseRoleMap[user.role] },
       token,
@@ -215,7 +282,7 @@ export function registerAuthRoutes(app: FastifyInstance) {
     } as AuthResponse);
   });
 
-  app.post('/v1/auth/refresh', {
+  app.post('/refresh', {
     bodyLimit: 10240,
     schema: {
       tags: ['Auth'],
@@ -231,6 +298,8 @@ export function registerAuthRoutes(app: FastifyInstance) {
     const body = request.body as { refreshToken?: string };
     if (!body?.refreshToken) {
       return reply.code(400).send({
+        statusCode: 400,
+        code: 'MISSING_REFRESH_TOKEN',
         error: 'Bad Request',
         message: 'refreshToken is required'
       });
@@ -290,7 +359,7 @@ export function registerAuthRoutes(app: FastifyInstance) {
     } as AuthResponse);
   });
 
-  app.post('/v1/auth/api-keys', {
+  app.post('/api-keys', {
     preHandler: [authMiddleware],
     bodyLimit: 10240,
     schema: {
@@ -351,7 +420,7 @@ export function registerAuthRoutes(app: FastifyInstance) {
     } as CreateApiKeyResponse);
   });
 
-  app.post('/v1/auth/logout', {
+  app.post('/logout', {
     preHandler: [authMiddleware],
     schema: {
       tags: ['Auth'],
@@ -376,6 +445,8 @@ export function registerAuthRoutes(app: FastifyInstance) {
     const body = request.body as { refreshToken?: string };
     if (!body?.refreshToken) {
       return reply.code(400).send({
+        statusCode: 400,
+        code: 'MISSING_REFRESH_TOKEN',
         error: 'Bad Request',
         message: 'refreshToken is required'
       });
@@ -413,7 +484,7 @@ export function registerAuthRoutes(app: FastifyInstance) {
     }
   });
 
-  app.delete('/v1/auth/api-keys/:keyId', {
+  app.delete('/api-keys/:keyId', {
     preHandler: [authMiddleware, requireRole('admin')],
     schema: {
       tags: ['Auth'],

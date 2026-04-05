@@ -1,6 +1,10 @@
 import { useDashboardStore } from '../store/dashboard-store';
 import { LiveIndicator } from './LiveIndicator';
 
+interface HeaderProps {
+  onLoginClick?: () => void;
+}
+
 const tabs = [
   { id: 'dashboard' as const, label: 'Dashboard', icon: '📊' },
   { id: 'signals' as const, label: 'Signals', icon: '📡' },
@@ -8,11 +12,12 @@ const tabs = [
   { id: 'ops' as const, label: 'Ops', icon: '⚙️' },
 ];
 
-export function Header() {
-  const { activeTab, setActiveTab } = useDashboardStore((state) => ({
-    activeTab: state.activeTab,
-    setActiveTab: state.setActiveTab,
-  }));
+export function Header({ onLoginClick }: HeaderProps) {
+  const activeTab = useDashboardStore((state) => state.activeTab);
+  const setActiveTab = useDashboardStore((state) => state.setActiveTab);
+  
+  // Check if user is authenticated
+  const isAuthenticated = typeof window !== 'undefined' && Boolean(localStorage.getItem('authToken'));
 
   return (
     <header className="bg-slate-800/95 backdrop-blur-sm border-b border-slate-700/50 sticky top-0 z-50">
@@ -45,8 +50,28 @@ export function Header() {
               </button>
             ))}
           </nav>
-          <div className="hidden sm:block">
+          <div className="flex items-center gap-4">
             <LiveIndicator />
+            {!isAuthenticated && onLoginClick && (
+              <button
+                onClick={onLoginClick}
+                className="px-3 py-1.5 text-sm font-medium text-slate-400 hover:text-slate-200 bg-slate-700/50 rounded-md transition-all"
+              >
+                Sign In
+              </button>
+            )}
+            {isAuthenticated && (
+              <button
+                onClick={() => {
+                  localStorage.removeItem('authToken');
+                  localStorage.removeItem('userEmail');
+                  window.location.reload();
+                }}
+                className="px-3 py-1.5 text-sm font-medium text-slate-400 hover:text-slate-200 bg-slate-700/50 rounded-md transition-all"
+              >
+                Sign Out
+              </button>
+            )}
           </div>
         </div>
       </div>

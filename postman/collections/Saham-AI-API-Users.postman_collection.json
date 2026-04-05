@@ -1,0 +1,135 @@
+{
+  "info": {
+    "name": "Saham AI API - Users",
+    "description": "User management endpoints for profile management, preferences, and account settings.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "saham-ai-api-users-v1",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "item": [
+    {
+      "name": "Get User Profile",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/users/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "users", "me"]
+        },
+        "description": "Get the authenticated user's profile information"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "users", "me"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"id\": \"user_123\",\n  \"email\": \"user@example.com\",\n  \"role\": \"user\",\n  \"profile\": {\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"phone\": \"+628123456789\",\n    \"timezone\": \"Asia/Jakarta\",\n    \"currency\": \"IDR\",\n    \"language\": \"en\"\n  },\n  \"preferences\": {\n    \"notifications\": {\n      \"email\": true,\n      \"push\": true,\n      \"sms\": false\n    },\n    \"digest\": {\n      \"frequency\": \"daily\",\n      \"time\": \"08:00\",\n      \"enabled\": true\n    },\n    \"alerts\": {\n      \"priceAlerts\": true,\n      \"signalAlerts\": true,\n      \"portfolioAlerts\": true\n    }\n  },\n  \"subscription\": {\n    \"plan\": \"premium\",\n    \"status\": \"active\",\n    \"expiresAt\": \"2024-12-31T23:59:59.000Z\",\n    \"features\": [\"real-time-data\", \"ai-analysis\", \"unlimited-alerts\", \"portfolio-analytics\"]\n  },\n  \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n  \"updatedAt\": \"2024-01-15T10:30:00.000Z\",\n  \"lastLoginAt\": \"2024-01-15T09:15:00.000Z\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Update User Profile",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"profile\": {\n    \"firstName\": \"John\",\n    \"lastName\": \"Smith\",\n    \"phone\": \"+628123456789\",\n    \"timezone\": \"Asia/Jakarta\",\n    \"currency\": \"IDR\",\n    \"language\": \"en\"\n  },\n  \"preferences\": {\n    \"notifications\": {\n      \"email\": true,\n      \"push\": false,\n      \"sms\": false\n    },\n    \"digest\": {\n      \"frequency\": \"weekly\",\n      \"time\": \"09:00\",\n      \"enabled\": true\n    },\n    \"alerts\": {\n      \"priceAlerts\": true,\n      \"signalAlerts\": false,\n      \"portfolioAlerts\": true\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/users/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "users", "me"]
+        },
+        "description": "Update user profile information and preferences"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profile\": {\n    \"firstName\": \"John\",\n    \"lastName\": \"Smith\",\n    \"phone\": \"+628123456789\",\n    \"timezone\": \"Asia/Jakarta\",\n    \"currency\": \"IDR\",\n    \"language\": \"en\"\n  },\n  \"preferences\": {\n    \"notifications\": {\n      \"email\": true,\n      \"push\": false,\n      \"sms\": false\n    },\n    \"digest\": {\n      \"frequency\": \"weekly\",\n      \"time\": \"09:00\",\n      \"enabled\": true\n    },\n    \"alerts\": {\n      \"priceAlerts\": true,\n      \"signalAlerts\": false,\n      \"portfolioAlerts\": true\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "users", "me"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"id\": \"user_123\",\n  \"email\": \"user@example.com\",\n  \"role\": \"user\",\n  \"profile\": {\n    \"firstName\": \"John\",\n    \"lastName\": \"Smith\",\n    \"phone\": \"+628123456789\",\n    \"timezone\": \"Asia/Jakarta\",\n    \"currency\": \"IDR\",\n    \"language\": \"en\"\n  },\n  \"preferences\": {\n    \"notifications\": {\n      \"email\": true,\n      \"push\": false,\n      \"sms\": false\n    },\n    \"digest\": {\n      \"frequency\": \"weekly\",\n      \"time\": \"09:00\",\n      \"enabled\": true\n    },\n    \"alerts\": {\n      \"priceAlerts\": true,\n      \"signalAlerts\": false,\n      \"portfolioAlerts\": true\n    }\n  },\n  \"subscription\": {\n    \"plan\": \"premium\",\n    \"status\": \"active\",\n    \"expiresAt\": \"2024-12-31T23:59:59.000Z\",\n    \"features\": [\"real-time-data\", \"ai-analysis\", \"unlimited-alerts\", \"portfolio-analytics\"]\n  },\n  \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n  \"updatedAt\": \"2024-01-15T10:45:00.000Z\",\n  \"lastLoginAt\": \"2024-01-15T09:15:00.000Z\"\n}"
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "description": "Base URL for the API"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "description": "JWT access token obtained from login"
+    }
+  ]
+}

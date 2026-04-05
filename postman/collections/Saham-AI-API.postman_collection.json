@@ -1,0 +1,991 @@
+{
+  "info": {
+    "name": "Saham AI API",
+    "description": "Comprehensive API collection for Saham AI - AI-powered stock analysis platform for Indonesian equities (IHSG). This collection covers all available endpoints including authentication, signals, analysis, stocks, portfolios, alerts, and operations.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "saham-ai-api-v1",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Basic health check endpoint to verify API service status"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/health",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["health"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"ok\",\n  \"service\": \"paperclip-sahamai\",\n  \"now\": \"2024-01-15T10:30:00.000Z\"\n}"
+            }
+          ]
+        }
+      ],
+      "description": "Health check endpoints"
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"securepassword123\",\n  \"role\": \"user\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "auth", "register"]
+            },
+            "description": "Register a new user account. Password must be at least 8 characters long."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"securepassword123\",\n  \"role\": \"user\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/v1/auth/register",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["v1", "auth", "register"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"user\": {\n    \"id\": \"user_123\",\n    \"email\": \"user@example.com\",\n    \"role\": \"user\",\n    \"createdAt\": \"2024-01-15T10:30:00.000Z\"\n  },\n  \"tokens\": {\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"expiresIn\": 3600\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"securepassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "auth", "login"]
+            },
+            "description": "Authenticate user and return JWT tokens"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"securepassword123\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/v1/auth/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["v1", "auth", "login"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"user\": {\n    \"id\": \"user_123\",\n    \"email\": \"user@example.com\",\n    \"role\": \"user\"\n  },\n  \"tokens\": {\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"expiresIn\": 3600\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "auth", "refresh"]
+            },
+            "description": "Refresh access token using refresh token"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/v1/auth/refresh",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["v1", "auth", "refresh"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"expiresIn\": 3600\n}"
+            }
+          ]
+        }
+      ],
+      "description": "Authentication endpoints for user registration, login, and token management"
+    },
+    {
+      "name": "Signals",
+      "item": [
+        {
+          "name": "Get Latest Signal (Single)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/signals/latest/:symbol",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "signals", "latest", ":symbol"],
+              "variable": [
+                {
+                  "key": "symbol",
+                  "value": "BBCA",
+                  "description": "Stock symbol (e.g., BBCA, TLKM)"
+                }
+              ]
+            },
+            "description": "Get the latest trading signal for a single symbol. Returns 404 if signal is missing, 503 if signal is stale."
+          },
+          "response": [
+            {
+              "name": "Fresh Signal",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/signals/latest/BBCA",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["v1", "signals", "latest", "BBCA"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"symbol\": \"BBCA\",\n  \"stale\": false,\n  \"status\": \"fresh\",\n  \"signal\": {\n    \"symbol\": \"BBCA\",\n    \"action\": \"buy\",\n    \"confidence\": 0.81,\n    \"generatedAt\": \"2024-01-15T10:25:00.000Z\",\n    \"expiresAt\": \"2024-01-15T10:29:00.000Z\",\n    \"version\": \"signal-registry-v1\",\n    \"reasonCodes\": [\"trend_up\", \"volume_confirmation\"]\n  }\n}"
+            },
+            {
+              "name": "Stale Signal",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/signals/latest/TLKM",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["v1", "signals", "latest", "TLKM"]
+                }
+              },
+              "status": "Service Unavailable",
+              "code": 503,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"symbol\": \"TLKM\",\n  \"stale\": true,\n  \"status\": \"stale\",\n  \"signal\": {\n    \"symbol\": \"TLKM\",\n    \"action\": \"hold\",\n    \"confidence\": 0.64,\n    \"generatedAt\": \"2024-01-15T10:20:00.000Z\",\n    \"expiresAt\": \"2024-01-15T10:24:55.000Z\",\n    \"version\": \"signal-registry-v1\",\n    \"reasonCodes\": [\"range_bound\"]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Latest Signals (Batch)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/signals/latest?symbols=BBCA,TLKM,BBRI",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "signals", "latest"],
+              "query": [
+                {
+                  "key": "symbols",
+                  "value": "BBCA,TLKM,BBRI",
+                  "description": "Comma-separated list of stock symbols. If empty, returns all signals."
+                }
+              ]
+            },
+            "description": "Get latest trading signals for multiple symbols. Returns freshness status for each signal."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/signals/latest?symbols=BBCA,TLKM,BBRI",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["v1", "signals", "latest"],
+                  "query": [
+                    {
+                      "key": "symbols",
+                      "value": "BBCA,TLKM,BBRI"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"count\": 3,\n  \"staleCount\": 1,\n  \"data\": [\n    {\n      \"symbol\": \"BBCA\",\n      \"stale\": false,\n      \"status\": \"fresh\",\n      \"signal\": {\n        \"symbol\": \"BBCA\",\n        \"action\": \"buy\",\n        \"confidence\": 0.81,\n        \"generatedAt\": \"2024-01-15T10:25:00.000Z\",\n        \"expiresAt\": \"2024-01-15T10:29:00.000Z\",\n        \"version\": \"signal-registry-v1\",\n        \"reasonCodes\": [\"trend_up\", \"volume_confirmation\"]\n      }\n    },\n    {\n      \"symbol\": \"TLKM\",\n      \"stale\": true,\n      \"status\": \"stale\",\n      \"signal\": {\n        \"symbol\": \"TLKM\",\n        \"action\": \"hold\",\n        \"confidence\": 0.64,\n        \"generatedAt\": \"2024-01-15T10:20:00.000Z\",\n        \"expiresAt\": \"2024-01-15T10:24:55.000Z\",\n        \"version\": \"signal-registry-v1\",\n        \"reasonCodes\": [\"range_bound\"]\n      }\n    },\n    {\n      \"symbol\": \"BBRI\",\n      \"stale\": true,\n      \"status\": \"missing\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Signals Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/signals/summary/latest",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "signals", "summary", "latest"]
+            },
+            "description": "Get aggregate freshness summary of all signals in the system"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/signals/summary/latest",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["v1", "signals", "summary", "latest"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"stale\": true,\n  \"status\": \"ok\",\n  \"total\": 2,\n  \"freshCount\": 1,\n  \"staleCount\": 1,\n  \"generatedAt\": \"2024-01-15T10:30:00.000Z\",\n  \"staleSymbols\": [\"TLKM\"]\n}"
+            }
+          ]
+        }
+      ],
+      "description": "Trading signal endpoints for getting buy/sell/hold recommendations"
+    },
+    {
+      "name": "Analysis",
+      "item": [
+        {
+          "name": "Run AI Analysis",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"priceHistory\": [\n    {\n      \"timestamp\": \"2024-01-10T00:00:00.000Z\",\n      \"open\": 9750,\n      \"high\": 9900,\n      \"low\": 9700,\n      \"close\": 9850,\n      \"volume\": 1500000\n    },\n    {\n      \"timestamp\": \"2024-01-11T00:00:00.000Z\",\n      \"open\": 9850,\n      \"high\": 9950,\n      \"low\": 9800,\n      \"close\": 9900,\n      \"volume\": 1200000\n    },\n    {\n      \"timestamp\": \"2024-01-12T00:00:00.000Z\",\n      \"open\": 9900,\n      \"high\": 10000,\n      \"low\": 9850,\n      \"close\": 9975,\n      \"volume\": 1800000\n    }\n  ],\n  \"news\": [\n    {\n      \"title\": \"BBCA Reports Strong Q4 Earnings\",\n      \"url\": \"https://example.com/news/bbca-q4\",\n      \"source\": \"Reuters\",\n      \"publishedAt\": \"2024-01-12T09:00:00.000Z\",\n      \"symbols\": [\"BBCA\"],\n      \"summary\": \"Bank Central Asia reported better than expected Q4 earnings...\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/analysis/:symbol",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "analysis", ":symbol"],
+              "variable": [
+                {
+                  "key": "symbol",
+                  "value": "BBCA",
+                  "description": "Stock symbol to analyze"
+                }
+              ]
+            },
+            "description": "Run AI analysis for a symbol using technical indicators and LLM reasoning. Requires price history data and optionally news items."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"priceHistory\": [\n    {\n      \"timestamp\": \"2024-01-10T00:00:00.000Z\",\n      \"open\": 9750,\n      \"high\": 9900,\n      \"low\": 9700,\n      \"close\": 9850,\n      \"volume\": 1500000\n    }\n  ],\n  \"news\": []\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/v1/analysis/BBCA",
+                  "host": ["baseUrl}}"],
+                  "path": ["v1", "analysis", "BBCA"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"symbol\": \"BBCA\",\n  \"analysisType\": \"TECHNICAL\",\n  \"recommendation\": \"BUY\",\n  \"confidence\": 0.78,\n  \"riskLevel\": \"MEDIUM\",\n  \"technicalAnalysis\": {\n    \"rsi\": 65.2,\n    \"macd\": {\n      \"macd\": 12.5,\n      \"signal\": 10.2,\n      \"histogram\": 2.3\n    },\n    \"bollingerBands\": {\n      \"upper\": 10100,\n      \"middle\": 9850,\n      \"lower\": 9600\n    },\n    \"sma\": {\n      \"sma20\": 9800,\n      \"sma50\": 9650\n    }\n  },\n  \"llmAnalysis\": {\n    \"reasoning\": \"Based on technical indicators, BBCA shows bullish momentum...\",\n    \"keyFactors\": [\"RSI indicating upward momentum\", \"Price above SMA20\", \"Positive MACD crossover\"]\n  },\n  \"summary\": \"BBCA shows strong technical indicators suggesting a buy opportunity with medium risk.\",\n  \"keyPoints\": [\"RSI at 65.2 indicating bullish momentum\", \"Price trading above key moving averages\", \"Positive MACD crossover confirmed\"],\n  \"metadata\": {\n    \"modelUsed\": \"gpt-4\",\n    \"dataPoints\": 30,\n    \"processingTimeMs\": 1250,\n    \"version\": \"analysis-v1.2\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Latest Analysis",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/analysis/:symbol/latest",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "analysis", ":symbol", "latest"],
+              "variable": [
+                {
+                  "key": "symbol",
+                  "value": "BBCA",
+                  "description": "Stock symbol"
+                }
+              ]
+            },
+            "description": "Get the latest cached AI analysis for a symbol"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/analysis/BBCA/latest",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["v1", "analysis", "BBCA", "latest"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"symbol\": \"BBCA\",\n  \"analysisType\": \"TECHNICAL\",\n  \"recommendation\": \"BUY\",\n  \"confidence\": 0.78,\n  \"riskLevel\": \"MEDIUM\",\n  \"technicalAnalysis\": {\n    \"rsi\": 65.2,\n    \"macd\": {\n      \"macd\": 12.5,\n      \"signal\": 10.2,\n      \"histogram\": 2.3\n    },\n    \"bollingerBands\": {\n      \"upper\": 10100,\n      \"middle\": 9850,\n      \"lower\": 9600\n    },\n    \"sma\": {\n      \"sma20\": 9800,\n      \"sma50\": 9650\n    }\n  },\n  \"summary\": \"BBCA shows strong technical indicators suggesting a buy opportunity with medium risk.\",\n  \"keyPoints\": [\"RSI at 65.2 indicating bullish momentum\", \"Price trading above key moving averages\", \"Positive MACD crossover confirmed\"],\n  \"metadata\": {\n    \"modelUsed\": \"gpt-4\",\n    \"dataPoints\": 30,\n    \"processingTimeMs\": 1250,\n    \"version\": \"analysis-v1.2\"\n  }\n}"
+            },
+            {
+              "name": "Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/analysis/UNKNOWN/latest",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["v1", "analysis", "UNKNOWN", "latest"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"symbol\": \"UNKNOWN\",\n  \"message\": \"No analysis available\"\n}"
+            }
+          ]
+        }
+      ],
+      "description": "AI analysis endpoints for stock technical and fundamental analysis"
+    },
+    {
+      "name": "Stocks",
+      "item": [
+        {
+          "name": "Get Real-time Quote",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/stocks/:symbol/quote",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "stocks", ":symbol", "quote"],
+              "variable": [
+                {
+                  "key": "symbol",
+                  "value": "BBCA",
+                  "description": "Stock symbol"
+                }
+              ]
+            },
+            "description": "Get real-time quote for a symbol. Requires STOCK_API_KEY environment variable."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/stocks/BBCA/quote",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["v1", "stocks", "BBCA", "quote"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"symbol\": \"BBCA\",\n  \"name\": \"Bank Central Asia Tbk\",\n  \"currentPrice\": 9875,\n  \"change\": 125,\n  \"changePercent\": 1.28,\n  \"dayHigh\": 9925,\n  \"dayLow\": 9750,\n  \"volume\": 1500000,\n  \"timestamp\": \"2024-01-15T10:30:00.000Z\"\n}"
+            },
+            {
+              "name": "Service Unavailable",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/stocks/BBCA/quote",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["v1", "stocks", "BBCA", "quote"]
+                }
+              },
+              "status": "Service Unavailable",
+              "code": 503,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Service Unavailable\",\n  \"message\": \"Stock data API not configured. Set STOCK_API_KEY environment variable.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Historical Data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/stocks/:symbol/history?interval=1day&from=2024-01-01&to=2024-01-15",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "stocks", ":symbol", "history"],
+              "variable": [
+                {
+                  "key": "symbol",
+                  "value": "BBCA",
+                  "description": "Stock symbol"
+                }
+              ],
+              "query": [
+                {
+                  "key": "interval",
+                  "value": "1day",
+                  "description": "Time interval (1day, 1hour, etc.)"
+                },
+                {
+                  "key": "from",
+                  "value": "2024-01-01",
+                  "description": "Start date (ISO format)"
+                },
+                {
+                  "key": "to",
+                  "value": "2024-01-15",
+                  "description": "End date (ISO format)"
+                }
+              ]
+            },
+            "description": "Get historical OHLCV data for a symbol"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/stocks/BBCA/history?interval=1day&from=2024-01-01&to=2024-01-15",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["v1", "stocks", "BBCA", "history"],
+                  "query": [
+                    {
+                      "key": "interval",
+                      "value": "1day"
+                    },
+                    {
+                      "key": "from",
+                      "value": "2024-01-01"
+                    },
+                    {
+                      "key": "to",
+                      "value": "2024-01-15"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"symbol\": \"BBCA\",\n  \"interval\": \"1day\",\n  \"data\": [\n    {\n      \"timestamp\": \"2024-01-10T00:00:00.000Z\",\n      \"open\": 9750,\n      \"high\": 9900,\n      \"low\": 9700,\n      \"close\": 9850,\n      \"volume\": 1500000\n    },\n    {\n      \"timestamp\": \"2024-01-11T00:00:00.000Z\",\n      \"open\": 9850,\n      \"high\": 9950,\n      \"low\": 9800,\n      \"close\": 9900,\n      \"volume\": 1200000\n    },\n    {\n      \"timestamp\": \"2024-01-12T00:00:00.000Z\",\n      \"open\": 9900,\n      \"high\": 10000,\n      \"low\": 9850,\n      \"close\": 9975,\n      \"volume\": 1800000\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Stock News",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/stocks/:symbol/news",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "stocks", ":symbol", "news"],
+              "variable": [
+                {
+                  "key": "symbol",
+                  "value": "BBCA",
+                  "description": "Stock symbol"
+                }
+              ]
+            },
+            "description": "Get news articles related to a specific stock"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/stocks/BBCA/news",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["v1", "stocks", "BBCA", "news"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"symbol\": \"BBCA\",\n  \"news\": [\n    {\n      \"title\": \"BBCA Reports Strong Q4 Earnings\",\n      \"url\": \"https://example.com/news/bbca-q4\",\n      \"source\": \"Reuters\",\n      \"publishedAt\": \"2024-01-12T09:00:00.000Z\",\n      \"symbols\": [\"BBCA\"],\n      \"summary\": \"Bank Central Asia reported better than expected Q4 earnings with a 15% increase in net profit.\"\n    },\n    {\n      \"title\": \"Indonesian Banking Sector Outlook Positive\",\n      \"url\": \"https://example.com/news/banking-outlook\",\n      \"source\": \"Bloomberg\",\n      \"publishedAt\": \"2024-01-11T14:30:00.000Z\",\n      \"symbols\": [\"BBCA\", \"BBRI\", \"BMRI\"],\n      \"summary\": \"Analysts maintain positive outlook on Indonesian banking sector amid economic recovery.\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Search Stocks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/stocks/search?q=Bank",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "stocks", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "Bank",
+                  "description": "Search query (1-100 characters)"
+                }
+              ]
+            },
+            "description": "Search for stocks by symbol or company name"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/stocks/search?q=Bank",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["v1", "stocks", "search"],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "Bank"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"query\": \"Bank\",\n  \"results\": [\n    {\n      \"symbol\": \"BBCA\",\n      \"name\": \"Bank Central Asia Tbk\",\n      \"type\": \"stock\",\n      \"exchange\": \"IDX\",\n      \"currency\": \"IDR\"\n    },\n    {\n      \"symbol\": \"BBRI\",\n      \"name\": \"Bank Rakyat Indonesia Tbk\",\n      \"type\": \"stock\",\n      \"exchange\": \"IDX\",\n      \"currency\": \"IDR\"\n    },\n    {\n      \"symbol\": \"BMRI\",\n      \"name\": \"Bank Mandiri Tbk\",\n      \"type\": \"stock\",\n      \"exchange\": \"IDX\",\n      \"currency\": \"IDR\"\n    }\n  ]\n}"
+            },
+            {
+              "name": "Bad Request",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/stocks/search",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["v1", "stocks", "search"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": \"Bad Request\",\n  \"message\": \"q parameter is required\"\n}"
+            }
+          ]
+        }
+      ],
+      "description": "Stock data endpoints for quotes, historical data, news, and search"
+    },
+    {
+      "name": "Market",
+      "item": [
+        {
+          "name": "Market Overview",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/market/overview",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "market", "overview"]
+            },
+            "description": "Get Indonesian market overview with IHSG index, top gainers/losers, and market status"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/market/overview",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["v1", "market", "overview"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"indices\": [\n    {\n      \"name\": \"IHSG\",\n      \"value\": 7280.45,\n      \"change\": 15.23,\n      \"changePercent\": 0.21\n    },\n    {\n      \"name\": \"LQ45\",\n      \"value\": 985.67,\n      \"change\": 3.45,\n      \"changePercent\": 0.35\n    },\n    {\n      \"name\": \"IDX30\",\n      \"value\": 520.12,\n      \"change\": -1.23,\n      \"changePercent\": -0.24\n    }\n  ],\n  \"topGainers\": [\n    {\n      \"symbol\": \"ASII\",\n      \"name\": \"Astra International\",\n      \"price\": 5300,\n      \"change\": 200,\n      \"changePercent\": 3.92\n    },\n    {\n      \"symbol\": \"BBCA\",\n      \"name\": \"Bank Central Asia\",\n      \"price\": 10000,\n      \"change\": 125,\n      \"changePercent\": 1.27\n    }\n  ],\n  \"topLosers\": [\n    {\n      \"symbol\": \"GOTO\",\n      \"name\": \"GoTo Gojek Tokopedia\",\n      \"price\": 78,\n      \"change\": -4,\n      \"changePercent\": -4.88\n    },\n    {\n      \"symbol\": \"TLKM\",\n      \"name\": \"Telkom Indonesia\",\n      \"price\": 3860,\n      \"change\": -60,\n      \"changePercent\": -1.53\n    }\n  ],\n  \"marketStatus\": \"open\"\n}"
+            }
+          ]
+        }
+      ],
+      "description": "Market overview endpoints"
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "description": "Base URL for the API"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "description": "JWT access token obtained from login"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-refresh token if needed",
+          "if (pm.collectionVariables.get('accessToken') && pm.collectionVariables.get('refreshToken')) {",
+          "    const token = pm.collectionVariables.get('accessToken');",
+          "    try {",
+          "        const payload = JSON.parse(atob(token.split('.')[1]));",
+          "        const now = Math.floor(Date.now() / 1000);",
+          "        ",
+          "        if (payload.exp - now < 300) { // Refresh if token expires in less than 5 minutes",
+          "            pm.sendRequest({",
+          "                url: pm.collectionVariables.get('baseUrl') + '/v1/auth/refresh',",
+          "                method: 'POST',",
+          "                header: {",
+          "                    'Content-Type': 'application/json'",
+          "                },",
+          "                body: {",
+          "                    mode: 'raw',",
+          "                    raw: JSON.stringify({",
+          "                        refreshToken: pm.collectionVariables.get('refreshToken')",
+          "                    })",
+          "                }",
+          "            }, function (err, res) {",
+          "                if (res && res.code === 200) {",
+          "                    pm.collectionVariables.set('accessToken', res.json().accessToken);",
+          "                }",
+          "            });",
+          "        }",
+          "    } catch (e) {",
+          "        console.log('Token parsing failed:', e);",
+          "    }",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Store tokens from auth responses",
+          "if (pm.response.code === 201 || pm.response.code === 200) {",
+          "    const responseJson = pm.response.json();",
+          "    ",
+          "    if (responseJson.tokens) {",
+          "        pm.collectionVariables.set('accessToken', responseJson.tokens.accessToken);",
+          "        pm.collectionVariables.set('refreshToken', responseJson.tokens.refreshToken);",
+          "    }",
+          "    ",
+          "    if (responseJson.accessToken) {",
+          "        pm.collectionVariables.set('accessToken', responseJson.accessToken);",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ]
+}

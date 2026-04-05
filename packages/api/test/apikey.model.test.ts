@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { prisma } from '../../src/generated/prisma/client.js';
+import { getPrismaClient } from '../src/db/index.js';
+const prisma = getPrismaClient();
 import { hashPassword } from '../src/auth/utils.js';
 
 describe('ApiKey Model', () => {

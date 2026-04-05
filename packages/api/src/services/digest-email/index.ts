@@ -27,6 +27,12 @@ export interface DigestContent {
     action: string;
     reason: string;
   }>;
+  signalsSummary: Array<{
+    symbol: string;
+    action: string;
+    confidence: number;
+    reasons: string[];
+  }>;
 }
 
 export interface DigestEmailOptions {
@@ -103,6 +109,14 @@ function formatCurrency(value: number): string {
   return value.toLocaleString('en-US', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 });
 }
 
+function escHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 export const digestTemplates = {
   render(content: DigestContent, prefs: DigestPreference): string {
     return `<!DOCTYPE html>
@@ -125,11 +139,12 @@ export const digestTemplates = {
           </tr>
           <tr>
             <td style="padding:32px;">
-              ${prefs.includeMarketSummary ? this.renderMarketOverview(content) : ''}
-              ${this.renderPortfolioSummary(content.portfolioSummary)}
-              ${prefs.includeAnalysis ? this.renderAIHighlights(content.aiHighlights) : ''}
-              ${this.renderSentimentSummary(content.sentimentSummary)}
-              ${this.renderRecommendations(content.recommendations)}
+              ${prefs.includeMarketSummary ? digestTemplates.renderMarketOverview(content) : ''}
+              ${digestTemplates.renderSignalsSummary(content.signalsSummary)}
+              ${digestTemplates.renderPortfolioSummary(content.portfolioSummary)}
+              ${prefs.includeAnalysis ? digestTemplates.renderAIHighlights(content.aiHighlights) : ''}
+              ${digestTemplates.renderSentimentSummary(content.sentimentSummary)}
+              ${digestTemplates.renderRecommendations(content.recommendations)}
             </td>
           </tr>
           <tr>
@@ -148,6 +163,27 @@ export const digestTemplates = {
   </table>
 </body>
 </html>`;
+  },
+
+  renderSignalsSummary(signals: DigestContent['signalsSummary']): string {
+    if (!signals || signals.length === 0) return '';
+    return `<div style="margin-bottom:24px;">
+      <h2 style="margin:0 0 12px;font-size:18px;color:#0f172a;">Watchlist signal summary</h2>
+      <p style="margin:0 0 12px;color:#64748b;font-size:13px;">Latest AI outlook for symbols on your watchlist.</p>
+      ${signals.map((s) => `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;margin-bottom:8px;">
+        <tr>
+          <td style="padding:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <span style="font-size:15px;font-weight:600;color:#0f172a;">${s.symbol}</span>
+              <span style="padding:4px 12px;background-color:${s.action === 'BUY' ? '#dcfce7' : s.action === 'SELL' ? '#fee2e2' : '#fef9c3'};color:${s.action === 'BUY' ? '#16a34a' : s.action === 'SELL' ? '#dc2626' : '#ca8a04'};border-radius:12px;font-size:12px;font-weight:600;">${s.action}</span>
+            </div>
+            <p style="margin:0;color:#64748b;font-size:13px;">${escHtml(s.reasons[0] || '')}</p>
+            <span style="color:#94a3b8;font-size:12px;">Confidence: ${(s.confidence * 100).toFixed(0)}%</span>
+          </td>
+        </tr>
+      </table>`).join('')}
+    </div>`;
   },
 
   renderMarketOverview(content: DigestContent): string {

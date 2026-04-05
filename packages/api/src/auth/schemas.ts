@@ -399,3 +399,65 @@ export const PortfolioListResponseSchema = Type.Object({
   count: Type.Number(),
   data: Type.Array(PortfolioSchema)
 });
+
+export const PortfolioHoldingSummarySchema = Type.Object({
+  symbol: Type.String(),
+  name: Type.String(),
+  shares: Type.Number(),
+  avgCost: Type.Number(),
+  currentPrice: Type.Number(),
+  marketValue: Type.Number(),
+  gainLoss: Type.Number(),
+  gainLossPercent: Type.Number(),
+  sector: Type.String()
+});
+
+export const SectorAllocationSchema = Type.Object({
+  sector: Type.String(),
+  percentage: Type.Number(),
+  value: Type.Number()
+});
+
+export const PortfolioSummaryResponseSchema = Type.Object({
+  totalValue: Type.Number(),
+  dayGainLoss: Type.Number(),
+  dayGainLossPercent: Type.Number(),
+  totalGainLoss: Type.Number(),
+  totalGainLossPercent: Type.Number(),
+  holdings: Type.Array(PortfolioHoldingSummarySchema),
+  sectorAllocation: Type.Array(SectorAllocationSchema)
+});
+
+export const MarketIndexSchema = Type.Object({
+  name: Type.String(),
+  value: Type.Number(),
+  change: Type.Number(),
+  changePercent: Type.Number()
+});
+
+export const MarketStockSchema = Type.Object({
+  symbol: Type.String(),
+  name: Type.String(),
+  price: Type.Number(),
+  change: Type.Number(),
+  changePercent: Type.Number()
+});
+
+export const MarketOverviewResponseSchema = Type.Object({
+  indices: Type.Array(MarketIndexSchema),
+  topGainers: Type.Array(MarketStockSchema),
+  topLosers: Type.Array(MarketStockSchema),
+  marketStatus: Type.Enum({ open: 'open', closed: 'closed', 'pre-market': 'pre-market', 'after-hours': 'after-hours' })
+});
+
+export const WatchlistResponseSchema = Type.Object({
+  symbols: Type.Array(Type.String())
+});
+
+export const AddWatchlistBodySchema = Type.Object({
+  symbol: Type.String({ minLength: 1, maxLength: 10, pattern: '^[a-zA-Z0-9]+$' })
+});
+
+export const ReorderWatchlistBodySchema = Type.Object({
+  symbols: Type.Array(Type.String({ minLength: 1, maxLength: 10 }), { minItems: 0 })
+});

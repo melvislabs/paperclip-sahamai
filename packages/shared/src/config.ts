@@ -9,6 +9,14 @@ export interface EnvConfig {
   STOCK_API_PROVIDER: 'alpha_vantage' | 'polygon' | 'finnhub';
   OPENAI_API_KEY?: string;
   OPENAI_MODEL: string;
+  OPENROUTER_API_KEY?: string;
+  OPENROUTER_MODEL: string;
+  OPENCODE_API_KEY?: string;
+  OPENCODE_MODEL: string;
+  OLLAMA_BASE_URL?: string;
+  OLLAMA_MODEL: string;
+  LLM_FALLBACK_ENABLED: boolean;
+  LLM_PROVIDER_PRIORITY: string;
   SIGNAL_TTL_MS: number;
   CACHE_TTL_MS: number;
   ALLOWED_ORIGINS: string;
@@ -73,6 +81,14 @@ export function loadConfig(): EnvConfig {
     STOCK_API_PROVIDER: (process.env.STOCK_API_PROVIDER || 'finnhub') as 'alpha_vantage' | 'polygon' | 'finnhub',
     OPENAI_API_KEY: process.env.OPENAI_API_KEY || undefined,
     OPENAI_MODEL: process.env.OPENAI_MODEL || 'gpt-4',
+    OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || undefined,
+    OPENROUTER_MODEL: process.env.OPENROUTER_MODEL || 'anthropic/claude-3.5-sonnet',
+    OPENCODE_API_KEY: process.env.OPENCODE_API_KEY || undefined,
+    OPENCODE_MODEL: process.env.OPENCODE_MODEL || 'opencode/claude-3.5-sonnet',
+    OLLAMA_BASE_URL: process.env.OLLAMA_BASE_URL || undefined,
+    OLLAMA_MODEL: process.env.OLLAMA_MODEL || 'llama3.2:3b',
+    LLM_FALLBACK_ENABLED: process.env.LLM_FALLBACK_ENABLED === 'true',
+    LLM_PROVIDER_PRIORITY: process.env.LLM_PROVIDER_PRIORITY || 'openai,openrouter,opencode,ollama,mock',
     SIGNAL_TTL_MS: parseNumber(process.env.SIGNAL_TTL_MS, 5 * 60 * 1000),
     CACHE_TTL_MS: parseNumber(process.env.CACHE_TTL_MS, 30 * 1000),
     ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS || 'http://localhost:5173',
@@ -95,7 +111,11 @@ export function loadConfig(): EnvConfig {
 }
 
 export function getConfig(): EnvConfig {
-  return loadConfig();
+  const config = loadConfig();
+  if (!config) {
+    throw new Error('Configuration not loaded');
+  }
+  return config;
 }
 
 export function resetConfig(): void {

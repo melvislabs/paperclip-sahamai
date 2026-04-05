@@ -5,6 +5,14 @@ workspace:
 cloudResources:
   collections:
     ../postman/collections/Ollama: 52577267-cb9adf8c-8d90-4034-b427-15186023b270
+    ../postman/collections/Saham-AI-API: saham-ai-api-main-v1
+    ../postman/collections/Saham-AI-API-Portfolios: saham-ai-api-portfolios-v1
+    ../postman/collections/Saham-AI-API-Alerts: saham-ai-api-alerts-v1
+    ../postman/collections/Saham-AI-API-Operations: saham-ai-api-operations-v1
+    ../postman/collections/Saham-AI-API-Users: saham-ai-api-users-v1
+    ../postman/collections/Saham-AI-API-WebSocket: saham-ai-api-websocket-v1
+    ../postman/collections/Saham-AI-API-Digest: saham-ai-api-digest-v1
+    ../postman/collections/Saham-AI-API-Watchlist: saham-ai-api-watchlist-v1
 
 # All resources in the `postman/` folder are automatically registered in Local View.
 # Point to additional files outside the `postman/` folder to register them individually. Example:

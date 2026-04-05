@@ -9,9 +9,10 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "outDir": "dist",
-    "rootDir": ".",
+    "rootDir": "/Users/melvin/Projects/paperclip-sahamai",
+    "baseUrl": "../..",
     "paths": {
-      "@sahamai/*": ["../*"]
+      "@sahamai/*": ["packages/*/src"]
     }
   },
   "include": ["src/**/*.ts"]

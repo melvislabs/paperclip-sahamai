@@ -1,0 +1,191 @@
+{
+  "info": {
+    "name": "Saham AI API - Operations",
+    "description": "Operational endpoints for monitoring system health, metrics, SLO dashboard, and active alerts. Used for system observability and maintenance.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "saham-ai-api-operations-v1",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "item": [
+    {
+      "name": "Get Operational Metrics",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/ops/metrics",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "ops", "metrics"]
+        },
+        "description": "Get comprehensive operational metrics including HTTP requests, signal freshness, delivery performance, and model usage statistics"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/ops/metrics",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "ops", "metrics"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"generatedAt\": \"2024-01-15T10:30:00.000Z\",\n  \"http\": {\n    \"totalRequests\": 15420,\n    \"errorRate\": 0.012,\n    \"avgLatencyMs\": 145,\n    \"p95LatencyMs\": 280,\n    \"p99LatencyMs\": 450,\n    \"requestsByEndpoint\": {\n      \"/v1/signals/latest\": 5230,\n      \"/v1/stocks/:symbol/quote\": 4150,\n      \"/v1/analysis/:symbol\": 2100,\n      \"/v1/market/overview\": 1890,\n      \"/v1/portfolios\": 1050,\n      \"/v1/alerts\": 1000\n    },\n    \"errorsByType\": {\n      \"429\": 120,\n      \"500\": 45,\n      \"503\": 20\n    }\n  },\n  \"freshness\": {\n    \"totalSignals\": 45,\n    \"freshSignals\": 42,\n    \"staleSignals\": 3,\n    \"staleRate\": 0.067,\n    \"avgAgeMinutes\": 12.5,\n    \"oldestSignalMinutes\": 28.3\n  },\n  \"delivery\": {\n    \"channels\": {\n      \"telegram\": {\n        \"sent\": 1250,\n        \"delivered\": 1180,\n        \"failed\": 70,\n        \"successRate\": 0.944,\n        \"avgLatencyMs\": 230\n      },\n      \"email\": {\n        \"sent\": 980,\n        \"delivered\": 950,\n        \"failed\": 30,\n        \"successRate\": 0.969,\n        \"avgLatencyMs\": 450\n      },\n      \"slack\": {\n        \"sent\": 650,\n        \"delivered\": 640,\n        \"failed\": 10,\n        \"successRate\": 0.985,\n        \"avgLatencyMs\": 180\n      }\n    }\n  },\n  \"modelUsage\": {\n    \"totalRequests\": 2100,\n    \"totalTokens\": 1250000,\n    \"avgTokensPerRequest\": 595,\n    \"costEstimate\": 15.75,\n    \"models\": {\n      \"gpt-4\": {\n        \"requests\": 1200,\n        \"tokens\": 720000,\n        \"cost\": 12.50\n      },\n      \"gpt-3.5-turbo\": {\n        \"requests\": 900,\n        \"tokens\": 530000,\n        \"cost\": 3.25\n      }\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get SLO Dashboard",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/ops/dashboard/latest",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "ops", "dashboard", "latest"]
+        },
+        "description": "Get SLO (Service Level Objective) dashboard payload with key performance indicators"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/ops/dashboard/latest",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "ops", "dashboard", "latest"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"generatedAt\": \"2024-01-15T10:30:00.000Z\",\n  \"slo\": {\n    \"apiErrorRate\": 0.012,\n    \"apiLatencyAvgMs\": 145,\n    \"staleRate\": 0.067\n  },\n  \"channels\": {\n    \"telegram\": {\n      \"sent\": 1250,\n      \"delivered\": 1180,\n      \"failed\": 70,\n      \"successRate\": 0.944,\n      \"avgLatencyMs\": 230\n    },\n    \"email\": {\n      \"sent\": 980,\n      \"delivered\": 950,\n      \"failed\": 30,\n      \"successRate\": 0.969,\n      \"avgLatencyMs\": 450\n    },\n    \"slack\": {\n      \"sent\": 650,\n      \"delivered\": 640,\n      \"failed\": 10,\n      \"successRate\": 0.985,\n      \"avgLatencyMs\": 180\n    }\n  },\n  \"costs\": {\n    \"totalRequests\": 2100,\n    \"totalTokens\": 1250000,\n    \"avgTokensPerRequest\": 595,\n    \"costEstimate\": 15.75,\n    \"models\": {\n      \"gpt-4\": {\n        \"requests\": 1200,\n        \"tokens\": 720000,\n        \"cost\": 12.50\n      },\n      \"gpt-3.5-turbo\": {\n        \"requests\": 900,\n        \"tokens\": 530000,\n        \"cost\": 3.25\n      }\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Active Alerts",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/ops/alerts/latest",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "ops", "alerts", "latest"]
+        },
+        "description": "Get currently active operational alerts that require attention"
+      },
+      "response": [
+        {
+          "name": "Success with Alerts",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/ops/alerts/latest",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "ops", "alerts", "latest"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"generatedAt\": \"2024-01-15T10:30:00.000Z\",\n  \"count\": 3,\n  \"alerts\": [\n    {\n      \"id\": \"alert_ops_1\",\n      \"type\": \"ERROR_RATE\",\n      \"severity\": \"WARNING\",\n      \"title\": \"High API Error Rate\",\n      \"message\": \"API error rate is 1.2% (threshold: 1.0%)\",\n      \"metric\": {\n        \"name\": \"http.errorRate\",\n        \"value\": 0.012,\n        \"threshold\": 0.01,\n        \"unit\": \"percentage\"\n      },\n      \"affectedEndpoints\": [\"/v1/stocks/:symbol/quote\", \"/v1/analysis/:symbol\"],\n      \"startedAt\": \"2024-01-15T09:45:00.000Z\",\n      \"status\": \"ACTIVE\",\n      \"actions\": [\"Check external API status\", \"Review recent deployments\", \"Monitor for escalation\"]\n    },\n    {\n      \"id\": \"alert_ops_2\",\n      \"type\": \"FRESHNESS\",\n      \"severity\": \"CRITICAL\",\n      \"title\": \"Stale Signals Detected\",\n      \"message\": \"3 out of 45 signals are stale (6.7% stale rate)\",\n      \"metric\": {\n        \"name\": \"freshness.staleRate\",\n        \"value\": 0.067,\n        \"threshold\": 0.05,\n        \"unit\": \"percentage\"\n      },\n      \"staleSymbols\": [\"TLKM\", \"BBNI\", \"KLBF\"],\n      \"startedAt\": \"2024-01-15T10:15:00.000Z\",\n      \"status\": \"ACTIVE\",\n      \"actions\": [\"Check data ingestion pipeline\", \"Verify data source connectivity\", \"Restart worker if needed\"]\n    },\n    {\n      \"id\": \"alert_ops_3\",\n      \"type\": \"COST\",\n      \"severity\": \"INFO\",\n      \"title\": \"Model Usage Cost Alert\",\n      \"message\": \"Daily model cost approaching budget: $15.75 of $20.00\",\n      \"metric\": {\n        \"name\": \"modelUsage.costEstimate\",\n        \"value\": 15.75,\n        \"threshold\": 20.00,\n        \"unit\": \"USD\"\n      },\n      \"startedAt\": \"2024-01-15T10:00:00.000Z\",\n      \"status\": \"ACTIVE\",\n      \"actions\": [\"Monitor usage trends\", \"Consider model optimization\", \"Review budget allocation\"]\n    }\n  ]\n}"
+        },
+        {
+          "name": "Success No Alerts",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/ops/alerts/latest",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "ops", "alerts", "latest"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"generatedAt\": \"2024-01-15T10:30:00.000Z\",\n  \"count\": 0,\n  \"alerts\": []\n}"
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "description": "Base URL for the API"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "description": "JWT access token obtained from login"
+    }
+  ]
+}

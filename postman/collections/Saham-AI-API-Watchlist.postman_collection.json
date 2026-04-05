@@ -1,0 +1,312 @@
+{
+  "info": {
+    "name": "Saham AI API - Watchlist",
+    "description": "Stock watchlist management endpoints for creating and managing personalized stock watchlists with real-time tracking.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "saham-ai-api-watchlist-v1",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "item": [
+    {
+      "name": "Get Watchlist",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/watchlist",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "watchlist"]
+        },
+        "description": "Get user's stock watchlist with current prices and changes"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/watchlist",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "watchlist"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"count\": 5,\n  \"data\": [\n    {\n      \"symbol\": \"BBCA\",\n      \"name\": \"Bank Central Asia Tbk\",\n      \"currentPrice\": 10000,\n      \"change\": 125,\n      \"changePercent\": 1.27,\n      \"dayHigh\": 10100,\n      \"dayLow\": 9850,\n      \"volume\": 1500000,\n      \"signal\": {\n        \"action\": \"buy\",\n        \"confidence\": 0.81,\n        \"stale\": false\n      },\n      \"addedAt\": \"2024-01-10T08:30:00.000Z\",\n      \"notes\": \"Strong banking sector performance\"\n    },\n    {\n      \"symbol\": \"TLKM\",\n      \"name\": \"Telkom Indonesia Tbk\",\n      \"currentPrice\": 3860,\n      \"change\": -60,\n      \"changePercent\": -1.53,\n      \"dayHigh\": 3950,\n      \"dayLow\": 3850,\n      \"volume\": 800000,\n      \"signal\": {\n        \"action\": \"hold\",\n        \"confidence\": 0.64,\n        \"stale\": false\n      },\n      \"addedAt\": \"2024-01-08T14:20:00.000Z\",\n      \"notes\": \"Telecom sector recovery\"\n    },\n    {\n      \"symbol\": \"BBRI\",\n      \"name\": \"Bank Rakyat Indonesia Tbk\",\n      \"currentPrice\": 5450,\n      \"change\": -50,\n      \"changePercent\": -0.91,\n      \"dayHigh\": 5525,\n      \"dayLow\": 5425,\n      \"volume\": 1200000,\n      \"signal\": {\n        \"action\": \"hold\",\n        \"confidence\": 0.72,\n        \"stale\": false\n      },\n      \"addedAt\": \"2024-01-12T10:15:00.000Z\",\n      \"notes\": null\n    },\n    {\n      \"symbol\": \"ASII\",\n      \"name\": \"Astra International Tbk\",\n      \"currentPrice\": 5300,\n      \"change\": 200,\n      \"changePercent\": 3.92,\n      \"dayHigh\": 5350,\n      \"dayLow\": 5100,\n      \"volume\": 900000,\n      \"signal\": {\n        \"action\": \"buy\",\n        \"confidence\": 0.78,\n        \"stale\": false\n      },\n      \"addedAt\": \"2024-01-05T09:45:00.000Z\",\n      \"notes\": \"Automotive sector leader\"\n    },\n    {\n      \"symbol\": \"UNVR\",\n      \"name\": \"Unilever Indonesia Tbk\",\n      \"currentPrice\": 4175,\n      \"change\": -75,\n      \"changePercent\": -1.77,\n      \"dayHigh\": 4250,\n      \"dayLow\": 4160,\n      \"volume\": 600000,\n      \"signal\": {\n        \"action\": \"sell\",\n        \"confidence\": 0.68,\n        \"stale\": true\n      },\n      \"addedAt\": \"2024-01-09T11:30:00.000Z\",\n      \"notes\": \"Consumer goods sector\"\n    }\n  ],\n  \"updatedAt\": \"2024-01-15T10:30:00.000Z\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Add to Watchlist",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"symbol\": \"BMRI\",\n  \"notes\": \"Bank Mandiri - largest state-owned bank\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/watchlist",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "watchlist"]
+        },
+        "description": "Add a stock to the user's watchlist with optional notes"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"BMRI\",\n  \"notes\": \"Bank Mandiri - largest state-owned bank\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/watchlist",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "watchlist"]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"symbol\": \"BMRI\",\n  \"name\": \"Bank Mandiri Tbk\",\n  \"currentPrice\": 6325,\n  \"change\": 75,\n  \"changePercent\": 1.20,\n  \"dayHigh\": 6400,\n  \"dayLow\": 6250,\n  \"volume\": 1100000,\n  \"signal\": {\n    \"action\": \"buy\",\n    \"confidence\": 0.74,\n    \"stale\": false\n  },\n  \"addedAt\": \"2024-01-15T10:35:00.000Z\",\n  \"notes\": \"Bank Mandiri - largest state-owned bank\"\n}"
+        },
+        {
+          "name": "Conflict - Already in Watchlist",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"BBCA\",\n  \"notes\": \"Already tracking this stock\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/watchlist",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "watchlist"]
+            }
+          },
+          "status": "Conflict",
+          "code": 409,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"error\": \"Conflict\",\n  \"message\": \"Stock already in watchlist\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Update Watchlist Item",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"notes\": \"Updated: Strong Q4 earnings expected\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/watchlist/:symbol",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "watchlist", ":symbol"],
+          "variable": [
+            {
+              "key": "symbol",
+              "value": "BBCA",
+              "description": "Stock symbol"
+            }
+          ]
+        },
+        "description": "Update notes for a watchlist item"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Updated: Strong Q4 earnings expected\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/watchlist/BBCA",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "watchlist", "BBCA"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"symbol\": \"BBCA\",\n  \"name\": \"Bank Central Asia Tbk\",\n  \"currentPrice\": 10000,\n  \"change\": 125,\n  \"changePercent\": 1.27,\n  \"dayHigh\": 10100,\n  \"dayLow\": 9850,\n  \"volume\": 1500000,\n  \"signal\": {\n    \"action\": \"buy\",\n    \"confidence\": 0.81,\n    \"stale\": false\n  },\n  \"addedAt\": \"2024-01-10T08:30:00.000Z\",\n  \"notes\": \"Updated: Strong Q4 earnings expected\",\n  \"updatedAt\": \"2024-01-15T10:40:00.000Z\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Remove from Watchlist",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/watchlist/:symbol",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "watchlist", ":symbol"],
+          "variable": [
+            {
+              "key": "symbol",
+              "value": "UNVR",
+              "description": "Stock symbol to remove"
+            }
+          ]
+        },
+        "description": "Remove a stock from the user's watchlist"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/watchlist/UNVR",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "watchlist", "UNVR"]
+            }
+          },
+          "status": "No Content",
+          "code": 204,
+          "header": [],
+          "body": ""
+        },
+        {
+          "name": "Not Found",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/watchlist/UNKNOWN",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "watchlist", "UNKNOWN"]
+            }
+          },
+          "status": "Not Found",
+          "code": 404,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"error\": \"Not Found\",\n  \"message\": \"Stock not found in watchlist\"\n}"
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "description": "Base URL for the API"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "description": "JWT access token obtained from login"
+    }
+  ]
+}

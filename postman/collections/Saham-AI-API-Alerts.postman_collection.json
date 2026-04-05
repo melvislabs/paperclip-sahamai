@@ -1,0 +1,377 @@
+{
+  "info": {
+    "name": "Saham AI API - Alerts",
+    "description": "Price alert management endpoints for creating, updating, and monitoring stock price alerts with multiple notification channels.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "saham-ai-api-alerts-v1",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "item": [
+    {
+      "name": "Create Price Alert",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"symbol\": \"BBCA\",\n  \"condition\": \"ABOVE\",\n  \"targetPrice\": 10000,\n  \"alertType\": \"ONE_TIME\",\n  \"expiresAt\": \"2024-12-31T23:59:59.000Z\",\n  \"notificationChannels\": [\"in_app\", \"email\"]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/alerts",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "alerts"]
+        },
+        "description": "Create a new price alert for a stock. Supports ABOVE, BELOW, and PERCENT_CHANGE conditions."
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"BBCA\",\n  \"condition\": \"ABOVE\",\n  \"targetPrice\": 10000,\n  \"alertType\": \"ONE_TIME\",\n  \"expiresAt\": \"2024-12-31T23:59:59.000Z\",\n  \"notificationChannels\": [\"in_app\", \"email\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/alerts",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "alerts"]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"id\": \"alert_123\",\n  \"userId\": \"user_456\",\n  \"symbol\": \"BBCA\",\n  \"condition\": \"ABOVE\",\n  \"targetPrice\": 10000,\n  \"alertType\": \"ONE_TIME\",\n  \"isActive\": true,\n  \"notificationChannels\": [\"in_app\", \"email\"],\n  \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n  \"updatedAt\": \"2024-01-15T10:30:00.000Z\",\n  \"expiresAt\": \"2024-12-31T23:59:59.000Z\",\n  \"triggeredAt\": null\n}"
+        }
+      ]
+    },
+    {
+      "name": "List Alerts",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/alerts",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "alerts"]
+        },
+        "description": "List all price alerts for the authenticated user"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/alerts",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "alerts"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"count\": 3,\n  \"data\": [\n    {\n      \"id\": \"alert_123\",\n      \"userId\": \"user_456\",\n      \"symbol\": \"BBCA\",\n      \"condition\": \"ABOVE\",\n      \"targetPrice\": 10000,\n      \"alertType\": \"ONE_TIME\",\n      \"isActive\": true,\n      \"notificationChannels\": [\"in_app\", \"email\"],\n      \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n      \"updatedAt\": \"2024-01-15T10:30:00.000Z\",\n      \"expiresAt\": \"2024-12-31T23:59:59.000Z\",\n      \"triggeredAt\": null\n    },\n    {\n      \"id\": \"alert_124\",\n      \"userId\": \"user_456\",\n      \"symbol\": \"TLKM\",\n      \"condition\": \"BELOW\",\n      \"targetPrice\": 3800,\n      \"alertType\": \"RECURRING\",\n      \"isActive\": true,\n      \"notificationChannels\": [\"in_app\"],\n      \"createdAt\": \"2024-01-14T15:20:00.000Z\",\n      \"updatedAt\": \"2024-01-14T15:20:00.000Z\",\n      \"expiresAt\": null,\n      \"triggeredAt\": \"2024-01-15T09:15:00.000Z\"\n    },\n    {\n      \"id\": \"alert_125\",\n      \"userId\": \"user_456\",\n      \"symbol\": \"BBRI\",\n      \"condition\": \"PERCENT_CHANGE\",\n      \"targetPrice\": 5,\n      \"alertType\": \"EXPIRING\",\n      \"isActive\": false,\n      \"notificationChannels\": [\"push\"],\n      \"createdAt\": \"2024-01-10T08:00:00.000Z\",\n      \"updatedAt\": \"2024-01-15T10:00:00.000Z\",\n      \"expiresAt\": \"2024-01-20T23:59:59.000Z\",\n      \"triggeredAt\": null\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Alert Details",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/alerts/:id",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "alerts", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "alert_123",
+              "description": "Alert ID"
+            }
+          ]
+        },
+        "description": "Get details of a specific price alert"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/alerts/alert_123",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "alerts", "alert_123"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"id\": \"alert_123\",\n  \"userId\": \"user_456\",\n  \"symbol\": \"BBCA\",\n  \"condition\": \"ABOVE\",\n  \"targetPrice\": 10000,\n  \"alertType\": \"ONE_TIME\",\n  \"isActive\": true,\n  \"notificationChannels\": [\"in_app\", \"email\"],\n  \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n  \"updatedAt\": \"2024-01-15T10:30:00.000Z\",\n  \"expiresAt\": \"2024-12-31T23:59:59.000Z\",\n  \"triggeredAt\": null\n}"
+        },
+        {
+          "name": "Not Found",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/alerts/invalid_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "alerts", "invalid_id"]
+            }
+          },
+          "status": "Not Found",
+          "code": 404,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"error\": \"Not Found\",\n  \"message\": \"Alert not found\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Update Alert",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"targetPrice\": 10500,\n  \"isActive\": true,\n  \"notificationChannels\": [\"in_app\", \"email\", \"push\"],\n  \"expiresAt\": \"2024-06-30T23:59:59.000Z\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/alerts/:id",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "alerts", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "alert_123",
+              "description": "Alert ID"
+            }
+          ]
+        },
+        "description": "Update an existing price alert. Can modify target price, active status, notification channels, or expiration."
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetPrice\": 10500,\n  \"isActive\": true,\n  \"notificationChannels\": [\"in_app\", \"email\", \"push\"],\n  \"expiresAt\": \"2024-06-30T23:59:59.000Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/alerts/alert_123",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "alerts", "alert_123"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"id\": \"alert_123\",\n  \"userId\": \"user_456\",\n  \"symbol\": \"BBCA\",\n  \"condition\": \"ABOVE\",\n  \"targetPrice\": 10500,\n  \"alertType\": \"ONE_TIME\",\n  \"isActive\": true,\n  \"notificationChannels\": [\"in_app\", \"email\", \"push\"],\n  \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n  \"updatedAt\": \"2024-01-15T11:00:00.000Z\",\n  \"expiresAt\": \"2024-06-30T23:59:59.000Z\",\n  \"triggeredAt\": null\n}"
+        }
+      ]
+    },
+    {
+      "name": "Delete Alert",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/alerts/:id",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "alerts", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "alert_123",
+              "description": "Alert ID"
+            }
+          ]
+        },
+        "description": "Delete a price alert permanently"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/alerts/alert_123",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "alerts", "alert_123"]
+            }
+          },
+          "status": "No Content",
+          "code": 204,
+          "header": [],
+          "body": ""
+        }
+      ]
+    },
+    {
+      "name": "Get Alert History",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/alerts/history",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "alerts", "history"]
+        },
+        "description": "Get triggered alert history for the authenticated user"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/alerts/history",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "alerts", "history"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"count\": 5,\n  \"data\": [\n    {\n      \"id\": \"history_1\",\n      \"alertId\": \"alert_124\",\n      \"userId\": \"user_456\",\n      \"symbol\": \"TLKM\",\n      \"condition\": \"BELOW\",\n      \"targetPrice\": 3800,\n      \"triggerPrice\": 3795,\n      \"triggeredAt\": \"2024-01-15T09:15:00.000Z\",\n      \"notificationSent\": true,\n      \"notificationChannels\": [\"in_app\"]\n    },\n    {\n      \"id\": \"history_2\",\n      \"alertId\": \"alert_126\",\n      \"userId\": \"user_456\",\n      \"symbol\": \"BBRI\",\n      \"condition\": \"ABOVE\",\n      \"targetPrice\": 5500,\n      \"triggerPrice\": 5525,\n      \"triggeredAt\": \"2024-01-14T14:30:00.000Z\",\n      \"notificationSent\": true,\n      \"notificationChannels\": [\"email\", \"push\"]\n    },\n    {\n      \"id\": \"history_3\",\n      \"alertId\": \"alert_127\",\n      \"userId\": \"user_456\",\n      \"symbol\": \"ASII\",\n      \"condition\": \"PERCENT_CHANGE\",\n      \"targetPrice\": 3,\n      \"triggerPrice\": 5250,\n      \"triggeredAt\": \"2024-01-13T11:45:00.000Z\",\n      \"notificationSent\": true,\n      \"notificationChannels\": [\"in_app\", \"email\"]\n    }\n  ]\n}"
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "description": "Base URL for the API"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "description": "JWT access token obtained from login"
+    }
+  ]
+}

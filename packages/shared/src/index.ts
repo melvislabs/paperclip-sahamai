@@ -6,23 +6,31 @@ export type {
   DeliveryChannel,
   SignalDestination,
   SignalPublishedEvent,
-  DeliveryAttempt,
-  DeliveryAdapter,
-  DeliveryAdapters,
-  RateLimitConfig,
-  FanoutWorkerOptions,
-  DeadLetterEntry,
-  DeliveryStatus,
-  DeliveryResult,
-  FanoutRunResult
 } from './fanout.js';
+export { SignalStore } from './store.js';
+export type { LatestSignal, SignalWithFreshness, SignalAction } from './types.js';
 export { ObservabilityHub } from './observability.js';
 export type { AlertSeverity, OperationalAlert } from './observability.js';
-export { SignalStore } from './store.js';
-export type { SignalAction, LatestSignal, SignalWithFreshness } from './types.js';
+export { BrokerService, type DatabaseClient } from './broker-service.js';
+export { BrokerDataIngestionService, type BrokerDataIngestionConfig } from './broker-ingestion.js';
+export type {
+  Broker,
+  BrokerFees,
+  BrokerFeatures,
+  BrokerReview,
+  BrokerPerformance,
+  BrokerComparison,
+  BrokerFilters,
+  FeeCalculation,
+  BrokerRecommendationRequest,
+  BrokerRecommendation,
+  OjkLicenseStatus
+} from './types.js';
 export { AIAnalysisService } from './ai-analysis/index.js';
 export type { LLMProvider, LLMProviderOptions } from './ai-analysis/llm-analyzer.js';
-export { OpenAIProvider, MockLLMProvider } from './ai-analysis/llm-analyzer.js';
+export { OpenAIProvider, MockLLMProvider, OllamaProvider, OpenRouterProvider, OpenCodeProvider, FallbackLLMProvider } from './ai-analysis/llm-analyzer.js';
+export type { FallbackLLMConfig } from './ai-analysis/llm-analyzer.js';
+export { createLLMProvider, getProviderInfo } from './ai-analysis/llm-provider-factory.js';
 export {
   fuseSentiment
 } from './ai-analysis/sentiment-fusion.js';

@@ -1,0 +1,585 @@
+{
+  "info": {
+    "name": "Saham AI API - Portfolios",
+    "description": "Portfolio management endpoints for creating and managing investment portfolios with holdings tracking and performance metrics.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "saham-ai-api-portfolios-v1",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "item": [
+    {
+      "name": "Portfolio Summary",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/portfolio/summary",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "portfolio", "summary"]
+        },
+        "description": "Get portfolio summary with computed metrics including total value, gains/losses, and sector allocation"
+      },
+      "response": [
+        {
+          "name": "Success with Portfolio",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/portfolio/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "portfolio", "summary"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"totalValue\": 1250000,\n  \"dayGainLoss\": 15000,\n  \"dayGainLossPercent\": 1.22,\n  \"totalGainLoss\": 125000,\n  \"totalGainLossPercent\": 11.11,\n  \"holdings\": [\n    {\n      \"symbol\": \"BBCA\",\n      \"name\": \"Bank Central Asia\",\n      \"shares\": 100,\n      \"avgCost\": 9500,\n      \"currentPrice\": 10000,\n      \"marketValue\": 1000000,\n      \"gainLoss\": 50000,\n      \"gainLossPercent\": 5.26,\n      \"sector\": \"Banking\"\n    },\n    {\n      \"symbol\": \"TLKM\",\n      \"name\": \"Telkom Indonesia\",\n      \"shares\": 50,\n      \"avgCost\": 3900,\n      \"currentPrice\": 5000,\n      \"marketValue\": 250000,\n      \"gainLoss\": 55000,\n      \"gainLossPercent\": 28.21,\n      \"sector\": \"Telecommunications\"\n    }\n  ],\n  \"sectorAllocation\": [\n    {\n      \"sector\": \"Banking\",\n      \"percentage\": 80.0,\n      \"value\": 1000000\n    },\n    {\n      \"sector\": \"Telecommunications\",\n      \"percentage\": 20.0,\n      \"value\": 250000\n    }\n  ]\n}"
+        },
+        {
+          "name": "Success No Portfolio",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/portfolio/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "portfolio", "summary"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"totalValue\": 0,\n  \"dayGainLoss\": 0,\n  \"dayGainLossPercent\": 0,\n  \"totalGainLoss\": 0,\n  \"totalGainLossPercent\": 0,\n  \"holdings\": [],\n  \"sectorAllocation\": []\n}"
+        }
+      ]
+    },
+    {
+      "name": "List Portfolios",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/portfolios",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "portfolios"]
+        },
+        "description": "List all portfolios for the authenticated user"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/portfolios",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "portfolios"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"count\": 2,\n  \"data\": [\n    {\n      \"id\": \"portfolio_123\",\n      \"userId\": \"user_456\",\n      \"totalValue\": 1250000,\n      \"cashBalance\": 0,\n      \"riskScore\": 5,\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n      \"updatedAt\": \"2024-01-15T10:30:00.000Z\"\n    },\n    {\n      \"id\": \"portfolio_124\",\n      \"userId\": \"user_456\",\n      \"totalValue\": 500000,\n      \"cashBalance\": 500000,\n      \"riskScore\": 3,\n      \"createdAt\": \"2024-01-10T00:00:00.000Z\",\n      \"updatedAt\": \"2024-01-15T09:15:00.000Z\"\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Create Portfolio",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"My Investment Portfolio\",\n  \"cashBalance\": 1000000\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/portfolios",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "portfolios"]
+        },
+        "description": "Create a new portfolio with optional initial cash balance"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Investment Portfolio\",\n  \"cashBalance\": 1000000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/portfolios",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "portfolios"]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"id\": \"portfolio_125\",\n  \"userId\": \"user_456\",\n  \"totalValue\": 1000000,\n  \"cashBalance\": 1000000,\n  \"riskScore\": null,\n  \"createdAt\": \"2024-01-15T10:35:00.000Z\",\n  \"updatedAt\": \"2024-01-15T10:35:00.000Z\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Portfolio Details",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/portfolios/:id",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "portfolios", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "portfolio_123",
+              "description": "Portfolio ID"
+            }
+          ]
+        },
+        "description": "Get detailed portfolio information including all holdings"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/portfolios/portfolio_123",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "portfolios", "portfolio_123"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"id\": \"portfolio_123\",\n  \"userId\": \"user_456\",\n  \"totalValue\": 1250000,\n  \"cashBalance\": 0,\n  \"riskScore\": 5,\n  \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n  \"updatedAt\": \"2024-01-15T10:30:00.000Z\",\n  \"holdings\": [\n    {\n      \"id\": \"holding_1\",\n      \"portfolioId\": \"portfolio_123\",\n      \"symbol\": \"BBCA\",\n      \"quantity\": 100,\n      \"avgCostPrice\": 9500,\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n      \"updatedAt\": \"2024-01-01T00:00:00.000Z\"\n    },\n    {\n      \"id\": \"holding_2\",\n      \"portfolioId\": \"portfolio_123\",\n      \"symbol\": \"TLKM\",\n      \"quantity\": 50,\n      \"avgCostPrice\": 3900,\n      \"createdAt\": \"2024-01-05T00:00:00.000Z\",\n      \"updatedAt\": \"2024-01-05T00:00:00.000Z\"\n    }\n  ]\n}"
+        },
+        {
+          "name": "Not Found",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+              "key": "Authorization",
+              "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/portfolios/invalid_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "portfolios", "invalid_id"]
+            }
+          },
+          "status": "Not Found",
+          "code": 404,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"error\": \"Not Found\",\n  \"message\": \"Portfolio not found\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Update Portfolio",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"cashBalance\": 50000,\n  \"riskScore\": 7\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/portfolios/:id",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "portfolios", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "portfolio_123",
+              "description": "Portfolio ID"
+            }
+          ]
+        },
+        "description": "Update portfolio cash balance or risk score"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cashBalance\": 50000,\n  \"riskScore\": 7\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/portfolios/portfolio_123",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "portfolios", "portfolio_123"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"id\": \"portfolio_123\",\n  \"userId\": \"user_456\",\n  \"totalValue\": 1300000,\n  \"cashBalance\": 50000,\n  \"riskScore\": 7,\n  \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n  \"updatedAt\": \"2024-01-15T10:40:00.000Z\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Delete Portfolio",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/portfolios/:id",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "portfolios", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "portfolio_123",
+              "description": "Portfolio ID"
+            }
+          ]
+        },
+        "description": "Delete a portfolio and all its holdings"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/portfolios/portfolio_123",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "portfolios", "portfolio_123"]
+            }
+          },
+          "status": "No Content",
+          "code": 204,
+          "header": [],
+          "body": ""
+        }
+      ]
+    },
+    {
+      "name": "Add Stock to Portfolio",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"symbol\": \"BBRI\",\n  \"quantity\": 200,\n  \"avgCostPrice\": 5400\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/portfolios/:id/stocks",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "portfolios", ":id", "stocks"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "portfolio_123",
+              "description": "Portfolio ID"
+            }
+          ]
+        },
+        "description": "Add a new stock holding to the portfolio"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"BBRI\",\n  \"quantity\": 200,\n  \"avgCostPrice\": 5400\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/portfolios/portfolio_123/stocks",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "portfolios", "portfolio_123", "stocks"]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"id\": \"holding_3\",\n  \"portfolioId\": \"portfolio_123\",\n  \"symbol\": \"BBRI\",\n  \"quantity\": 200,\n  \"avgCostPrice\": 5400,\n  \"createdAt\": \"2024-01-15T10:45:00.000Z\",\n  \"updatedAt\": \"2024-01-15T10:45:00.000Z\"\n}"
+        },
+        {
+          "name": "Conflict - Stock Already Exists",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"BBCA\",\n  \"quantity\": 50,\n  \"avgCostPrice\": 9800\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/portfolios/portfolio_123/stocks",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "portfolios", "portfolio_123", "stocks"]
+            }
+          },
+          "status": "Conflict",
+          "code": 409,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"error\": \"Conflict\",\n  \"message\": \"Stock already exists in portfolio\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Remove Stock from Portfolio",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/portfolios/:id/stocks/:symbol",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "portfolios", ":id", "stocks", ":symbol"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "portfolio_123",
+              "description": "Portfolio ID"
+            },
+            {
+              "key": "symbol",
+              "value": "BBCA",
+              "description": "Stock symbol to remove"
+            }
+          ]
+        },
+        "description": "Remove a stock holding from the portfolio"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/portfolios/portfolio_123/stocks/BBCA",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "portfolios", "portfolio_123", "stocks", "BBCA"]
+            }
+          },
+          "status": "No Content",
+          "code": 204,
+          "header": [],
+          "body": ""
+        },
+        {
+          "name": "Not Found",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/portfolios/portfolio_123/stocks/UNKNOWN",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "portfolios", "portfolio_123", "stocks", "UNKNOWN"]
+            }
+          },
+          "status": "Not Found",
+          "code": 404,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"error\": \"Not Found\",\n  \"message\": \"Stock not found in portfolio\"\n}"
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "description": "Base URL for the API"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "description": "JWT access token obtained from login"
+    }
+  ]
+}

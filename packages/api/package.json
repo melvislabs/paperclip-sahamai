@@ -3,15 +3,45 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./digest-batch": {
+      "types": "./dist/jobs/digest-batch.d.ts",
+      "import": "./dist/jobs/digest-batch.js",
+      "default": "./dist/jobs/digest-batch.js"
+    },
+    "./db": {
+      "types": "./dist/db/index.d.ts",
+      "import": "./dist/db/index.js",
+      "default": "./dist/db/index.js"
+    },
+    "./alerts/monitor": {
+      "types": "./dist/services/alerts/monitor.d.ts",
+      "import": "./dist/services/alerts/monitor.js",
+      "default": "./dist/services/alerts/monitor.js"
+    },
+    "./alerts/notifier": {
+      "types": "./dist/services/alerts/notifier.d.ts",
+      "import": "./dist/services/alerts/notifier.js",
+      "default": "./dist/services/alerts/notifier.js"
+    },
+    "./alerts/types": {
+      "types": "./dist/services/alerts/types.d.ts",
+      "import": "./dist/services/alerts/types.js",
+      "default": "./dist/services/alerts/types.js"
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "dev": "tsx src/server.ts",
     "test": "vitest run",
     "smoke:runtime": "node scripts/smoke-runtime.mjs",
-    "smoke:deploy": "node scripts/smoke-deploy.mjs"
+    "smoke:deploy": "node scripts/smoke-deploy.mjs",
+    "db:seed": "tsx prisma/seed.ts",
+    "digest:send": "tsx src/jobs/digest-batch-cli.ts"
   },
   "dependencies": {
+    "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.2.0",
     "@fastify/helmet": "^13.0.2",
     "@fastify/rate-limit": "^10.3.0",
@@ -25,8 +55,9 @@
     "bcrypt": "^6.0.0",
     "dotenv": "^16.6.1",
     "fastify": "^5.1.0",
+    "google-auth-library": "^10.6.2",
     "jsonwebtoken": "^9.0.3",
-    "nodemailer": "^6.10.1",
+    "nodemailer": "^8.0.4",
     "pg": "^8.20.0"
   },
   "devDependencies": {

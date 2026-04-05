@@ -39,7 +39,7 @@ Core library consumed by all other packages.
 | Module | Purpose |
 |--------|---------|
 | `types.ts` | Signal types: `LatestSignal`, `SignalWithFreshness`, `SignalAction` |
-| `ai-analysis/` | AI analysis service: technical indicators (RSI, MACD, Bollinger Bands, SMA/EMA), LLM integration, sentiment fusion |
+| `ai-analysis/` | AI analysis service: technical indicators (RSI, MACD, Bollinger Bands, SMA/EMA), multi-provider LLM integration with fallback, sentiment fusion |
 | `stock-api/` | Stock data API client with rate limiting and response caching. Supports Alpha Vantage, Polygon, Finnhub |
 | `cache.ts` | TTL cache for reducing hot-path read latency |
 | `store.ts` | In-memory signal registry with stale detection via `expiresAt` |
@@ -79,6 +79,28 @@ Fastify HTTP server. Runs on `PORT` (default `3000`).
 
 **Security Middleware:** Helmet (CSP, HSTS, frameguard), CORS, rate limiting (100 req/min)
 
+**Additional Endpoints:**
+- `POST /v1/alerts` — Create price alert
+- `GET /v1/alerts` — List user alerts
+- `GET /v1/alerts/:id` — Get alert details
+- `PATCH /v1/alerts/:id` — Update alert
+- `DELETE /v1/alerts/:id` — Delete alert
+- `GET /v1/alerts/history` — Alert trigger history
+- `GET /v1/settings/digest` — Get digest preferences
+- `PATCH /v1/settings/digest` — Update digest preferences
+- `GET /v1/users/me` — User profile
+- `PATCH /v1/users/me` — Update profile
+- `GET /v1/portfolios` — List portfolios
+- `POST /v1/portfolios` — Create portfolio
+- `GET /v1/portfolios/:id` — Portfolio + holdings
+- `PATCH /v1/portfolios/:id` — Update portfolio
+- `DELETE /v1/portfolios/:id` — Delete portfolio
+- `POST /v1/portfolios/:id/stocks` — Add holding
+- `DELETE /v1/portfolios/:id/stocks/:symbol` — Remove holding
+- `GET /v1/ws` — WebSocket connection for real-time updates
+
+**Interactive API Docs:** `GET /docs` — Swagger/OpenAPI UI
+
 #### @sahamai/worker
 Data ingestion and scheduled jobs.
 
@@ -97,9 +119,21 @@ React + Vite frontend dashboard.
 |-----------|---------|
 | `SignalsDashboard` | Displays trading signals with freshness status |
 | `OpsDashboard` | Operational metrics, SLOs, and alerts |
+| `AIAnalysisReportPage` | Full AI analysis report with price chart, technical indicators, LLM analysis, sentiment fusion |
+| `PriceChart` | Recharts area chart with volume bars and time range selector |
+| `StockWatchlist` | Sortable watchlist with quotes and signal badges |
+| `AIInsights` | AI insight cards with recommendation, confidence, risk, key points |
+| `PortfolioSummaryCard` | Portfolio value, gain/loss, sector allocation |
+| `AlertsPanel` | Operational alerts display |
 | `Header` | Navigation header with tab switching |
 
-**Data flow:** Fetches from `/v1/signals/latest`, `/v1/ops/metrics`, `/v1/ops/alerts/latest`, `/v1/ops/dashboard/latest` on mount and polling interval.
+**Tabs:** Dashboard, Signals, Analysis, Ops
+**State:** Zustand store + TanStack Query with URL hash sync
+**Polling:** 15s-5min intervals depending on data type
+
+**Known frontend issues:**
+- Calls `/v1/portfolio/summary` and `/v1/market/overview` which do NOT exist as API endpoints (404)
+- Watchlist quotes and AI insights use raw `fetch()` without auth headers (will 401)
 
 ### Data Flow Architecture
 
@@ -116,6 +150,26 @@ Market/Fundamental/News Sources
 Paperclip Control Plane
   → Agent task routing, approvals, delegation, audit logs, run-level traceability
 ```
+
+### User-Facing Feature Gaps
+
+These gaps directly impact user experience and should be prioritized for making the platform useful:
+
+| Priority | Gap | Impact on User | Fix |
+|----------|-----|----------------|-----|
+| **P0** | `/v1/portfolio/summary` endpoint missing | Portfolio card shows nothing | Implement endpoint with computed metrics |
+| **P0** | `/v1/market/overview` endpoint missing | Market overview panel broken | Implement with IHSG index, gainers/losers |
+| **P0** | Web API client lacks auth headers | All stock/watchlist calls return 401 | Add Bearer token to fetch calls |
+| **P0** | Worker has no entry point | No automated data ingestion, stale signals | Add `src/main.ts` and start script |
+| **P1** | No watchlist backend | Users cannot save favorite stocks | Add watchlist CRUD + Prisma model |
+| **P1** | Redis not wired | No shared caching, slower responses | Wire Redis client into cache layer |
+| **P1** | Push notifications stubbed | No mobile alerts | Integrate FCM or OneSignal |
+| **P1** | Digest email never sent | Users get no daily summary | Implement digest generation + scheduler |
+| **P1** | News sentiment pre-classified | No NLP analysis of news text | Add text-based sentiment analysis |
+| **P2** | No stock screener | Cannot discover stocks by criteria | Add screener with technical filters |
+| **P2** | No backtesting | Cannot validate signal accuracy | Add historical signal replay module |
+| **P2** | No user onboarding | Steep learning curve | Add guided tour, tooltips, help docs |
+| **P2** | No multi-model LLM fallback | Single point of failure | ✅ **COMPLETED**: Added model rotation chain with OpenRouter, OpenCode, Ollama, and fallback support |
 
 ### Data Contracts
 
@@ -272,6 +326,12 @@ Agents interact with Paperclip via REST API. Key endpoints:
 | `STOCK_API_PROVIDER` | api | Data provider: `alpha_vantage`, `polygon`, `finnhub` |
 | `STOCK_API_KEY` | api | Stock data API key |
 | `OPENAI_API_KEY` | shared | OpenAI key for LLM analysis (falls back to mock) |
+| `OPENROUTER_API_KEY` | shared | OpenRouter key for multi-model access (optional) |
+| `OPENCODE_API_KEY` | shared | OpenCode key for developer-focused AI (optional) |
+| `OLLAMA_BASE_URL` | shared | Ollama local LLM endpoint (default: http://localhost:11434) |
+| `OLLAMA_MODEL` | shared | Ollama model name (default: llama3.2:3b) |
+| `LLM_FALLBACK_ENABLED` | shared | Enable multi-provider fallback (default: true) |
+| `LLM_PROVIDER_PRIORITY` | shared | Provider priority order (default: openai,openrouter,opencode,ollama,mock) |
 | `NODE_ENV` | all | Environment: `development`, `test`, `production` |
 | `ALLOWED_ORIGINS` | api | CORS allowed origins (comma-separated) |
 | `DATABASE_URL` | api | PostgreSQL connection string (not yet wired) |
@@ -304,7 +364,7 @@ Agents interact with Paperclip via REST API. Key endpoints:
 - API: return appropriate HTTP status codes (404, 401, 429, 500, 503)
 - Worker: catch errors in ingestion, return error in result, continue loop
 - Fanout: dead-letter queue for failed deliveries, retry with backoff
-- LLM: gracefully degrade to technical-only analysis if LLM fails
+- LLM: gracefully degrade to technical-only analysis if LLM fails (multi-provider fallback implemented)
 
 ### Testing
 
@@ -321,11 +381,30 @@ Agents interact with Paperclip via REST API. Key endpoints:
 
 ## Technical Roadmap
 
-1. Replace in-memory signal store with persistent registry (Postgres/Redis)
-2. Add production IHSG data provider connectors
-3. Add scoring/risk modules as first-class services with versioned I/O
-4. Add event bus (NATS/Kafka/SQS) for publish/fanout decoupling
-5. Add runbook docs for each alert code
+### Phase 1: Make It Usable (P0 — Unblock the Product)
+1. Fix web API client auth headers — all stock endpoints return 401 without Bearer token
+2. Implement `/v1/portfolio/summary` endpoint — portfolio dashboard card is broken
+3. Implement `/v1/market/overview` endpoint — market overview panel is broken
+4. Add worker entry point (`src/main.ts`) — no automated data ingestion runs
+5. Add seed data for Indonesian blue-chip stocks (BBCA, BBRI, BMRI, TLKM, ASII, UNVR, GOTO)
+
+### Phase 2: Core User Features (P1 — Make It Valuable)
+6. Wire Redis into cache layer — shared caching across instances
+7. Add watchlist backend — users need to save and track favorite stocks
+8. Implement NLP-based news sentiment analysis — replace pre-classified sentiment
+9. Implement digest email generation + scheduled sending — daily summary for users
+10. Integrate push notifications (FCM) — mobile alert delivery
+11. Add portfolio gain/loss and sector allocation computation
+
+### Phase 3: Advanced Features (P2 — Make It Competitive)
+12. Add stock screener with technical filters — stock discovery tool
+13. Add backtesting module — validate signal accuracy historically
+14. Add multi-model LLM fallback — ✅ **COMPLETED**: reliability improvement with OpenRouter, OpenCode, Ollama integration
+15. Add user onboarding/tutorial — reduce learning curve
+16. Replace in-memory signal store with persistent registry (Postgres/Redis)
+17. Add production IHSG data provider connectors
+18. Add event bus (NATS/Kafka/SQS) for publish/fanout decoupling
+19. Add runbook docs for each alert code
 
 ## Design Principles
 

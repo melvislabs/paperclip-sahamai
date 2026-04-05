@@ -1,9 +1,9 @@
-import prisma from '@sahamai/api/src/db/index';
-import { AlertMonitor } from '@sahamai/api/src/services/alerts/monitor';
-import { Notifier } from '@sahamai/api/src/services/alerts/notifier';
+import prisma from '@sahamai/api/db';
+import { AlertMonitor } from '@sahamai/api/alerts/monitor';
+import { Notifier } from '@sahamai/api/alerts/notifier';
 import type { StockApiClient } from '@sahamai/shared';
 import type { Transporter } from 'nodemailer';
-import type { NotificationChannel } from '@sahamai/api/src/services/alerts/types';
+import type { NotificationChannel } from '@sahamai/api/alerts/types';
 
 export interface PriceAlertMonitorResult {
   symbol: string;
@@ -125,7 +125,7 @@ export class PriceAlertMonitorJob {
       where: { isActive: true },
       include: { stock: true },
     });
-    return [...new Set(alerts.map((a) => a.stock.symbol))];
+    return [...new Set(alerts.map((a) => String(a.stock.symbol)))];
   }
 
   private async deactivateExpiredAlerts(): Promise<void> {

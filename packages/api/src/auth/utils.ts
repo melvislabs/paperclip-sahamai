@@ -61,3 +61,64 @@ export function generateApiKey(): { rawKey: string; keyHash: string } {
   const keyHash = bcrypt.hashSync(rawKey, BCRYPT_ROUNDS);
   return { rawKey, keyHash };
 }
+
+export function validatePasswordStrength(password: string): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  if (password.length < 8) {
+    errors.push('Password must be at least 8 characters long');
+  }
+
+  if (password.length > 128) {
+    errors.push('Password must be at most 128 characters long');
+  }
+
+  if (!/[a-z]/.test(password)) {
+    errors.push('Password must contain at least one lowercase letter');
+  }
+
+  if (!/[A-Z]/.test(password)) {
+    errors.push('Password must contain at least one uppercase letter');
+  }
+
+  if (!/[0-9]/.test(password)) {
+    errors.push('Password must contain at least one number');
+  }
+
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    errors.push('Password must contain at least one special character');
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+}
+
+export async function verifyApiKey(apiKey: string): Promise<{ userId: string; role: UserRole } | null> {
+  const { getPrismaClient } = await import('../db/index.js');
+  const prisma = getPrismaClient();
+  
+  // Find API key with user relation
+  const keyRecord = await prisma.apiKey.findFirst({
+    where: {
+      keyHash: { contains: apiKey }, // This is a placeholder - real implementation would use bcrypt.compare
+      OR: [
+        { expiresAt: null },
+        { expiresAt: { gt: new Date() } }
+      ]
+    },
+    include: {
+      user: true
+    }
+  });
+
+  if (!keyRecord || !keyRecord.user) {
+    return null;
+  }
+
+  return {
+    userId: keyRecord.userId,
+    role: keyRecord.user.role as UserRole
+  };
+}

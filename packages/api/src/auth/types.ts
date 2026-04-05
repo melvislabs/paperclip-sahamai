@@ -6,6 +6,13 @@ export interface AuthUser {
   role: UserRole;
 }
 
+export interface LoginAttemptResult {
+  success: boolean;
+  user?: { id: string; email: string; role: UserRole };
+  error?: 'invalid_credentials' | 'account_locked';
+  lockoutRemainingMs?: number;
+}
+
 export interface RegisterRequest {
   email: string;
   password: string;

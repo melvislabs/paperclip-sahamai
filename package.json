@@ -6,16 +6,23 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build -w @sahamai/shared && npm run build -w @sahamai/worker && npm run build -w @sahamai/api && npm run build -w @sahamai/web",
-    "build:backend": "npm run build -w @sahamai/shared && npm run build -w @sahamai/worker && npm run build -w @sahamai/api",
+    "build": "npm run build -w @sahamai/shared && npm run build -w @sahamai/api && npm run build -w @sahamai/worker && npm run build -w @sahamai/web",
+    "build:backend": "npm run build -w @sahamai/shared && npm run build -w @sahamai/api && npm run build -w @sahamai/worker",
     "build:web": "npm run build -w @sahamai/web",
     "test": "npm run test --workspaces --if-present",
     "dev": "npm run dev -w @sahamai/api",
+    "dev:worker": "npm run dev -w @sahamai/worker",
     "dev:web": "npm run dev -w @sahamai/web",
     "smoke:runtime": "npm run smoke:runtime -w @sahamai/api",
     "smoke:deploy": "npm run smoke:deploy -w @sahamai/api"
   },
   "devDependencies": {
     "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "nodemailer": "^8.0.4"
+  },
+  "overrides": {
+    "vite": "^6.4.1"
   }
 }

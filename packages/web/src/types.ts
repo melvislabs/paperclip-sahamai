@@ -10,6 +10,7 @@ export interface StockQuote {
   open: number;
   previousClose: number;
   updatedAt: string;
+  marketCap?: number;
 }
 
 export interface SignalData {
@@ -188,3 +189,18 @@ export interface DashboardSLO {
 }
 
 export type TimeRange = '1D' | '1W' | '1M' | '3M' | '1Y';
+
+export type WsMessage =
+  | { type: 'subscribe'; symbols?: string[]; channel?: string }
+  | { type: 'unsubscribe'; symbols?: string[]; channel?: string }
+  | { type: 'ping' }
+  | { type: 'signal'; symbol: string; action: string; confidence: number; generatedAt: string }
+  | { type: 'price'; symbol: string; price: number; change: number; changePercent: number; volume: number }
+  | { type: 'alert'; data: { id: string; symbol: string; condition: string; threshold: number; currentPrice: number; triggeredAt: string } }
+  | { type: 'analysis'; data: { symbol: string; recommendation: string; confidence: number; summary: string; timestamp: string } }
+  | { type: 'portfolio'; data: { portfolioId: string; totalValue: number; cashBalance: number; change24h: number; timestamp: string } }
+  | { type: 'pong' }
+  | { type: 'error'; message: string }
+  | { type: 'connected'; clientId: string }
+  | { type: 'subscribed'; channel: string }
+  | { type: 'unsubscribed'; channel: string };

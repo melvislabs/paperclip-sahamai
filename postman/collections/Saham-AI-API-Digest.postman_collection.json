@@ -1,0 +1,135 @@
+{
+  "info": {
+    "name": "Saham AI API - Digest",
+    "description": "Daily digest email settings and management for automated market summaries and personalized insights.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "saham-ai-api-digest-v1",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "item": [
+    {
+      "name": "Get Digest Preferences",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/settings/digest",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "settings", "digest"]
+        },
+        "description": "Get user's daily digest email preferences and settings"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/settings/digest",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "settings", "digest"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"enabled\": true,\n  \"frequency\": \"daily\",\n  \"time\": \"08:00\",\n  \"timezone\": \"Asia/Jakarta\",\n  \"content\": {\n    \"marketOverview\": true,\n    \"portfolioUpdates\": true,\n    \"signalAlerts\": true,\n    \"newsDigest\": true,\n    \"watchlistUpdates\": false\n  },\n  \"format\": {\n    \"includeCharts\": true,\n    \"detailedAnalysis\": true,\n    \"language\": \"en\"\n  },\n  \"delivery\": {\n    \"email\": \"user@example.com\",\n    \"pushNotification\": false,\n    \"inApp\": true\n  },\n  \"lastSentAt\": \"2024-01-15T08:00:00.000Z\",\n  \"nextScheduledAt\": \"2024-01-16T08:00:00.000Z\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Update Digest Preferences",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"enabled\": true,\n  \"frequency\": \"daily\",\n  \"time\": \"09:00\",\n  \"timezone\": \"Asia/Jakarta\",\n  \"content\": {\n    \"marketOverview\": true,\n    \"portfolioUpdates\": true,\n    \"signalAlerts\": true,\n    \"newsDigest\": true,\n    \"watchlistUpdates\": true\n  },\n  \"format\": {\n    \"includeCharts\": true,\n    \"detailedAnalysis\": false,\n    \"language\": \"en\"\n  },\n  \"delivery\": {\n    \"email\": \"user@example.com\",\n    \"pushNotification\": true,\n    \"inApp\": true\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/settings/digest",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "settings", "digest"]
+        },
+        "description": "Update user's daily digest email preferences including frequency, content, and delivery settings"
+      },
+      "response": [
+        {
+          "name": "Success",
+          "originalRequest": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true,\n  \"frequency\": \"daily\",\n  \"time\": \"09:00\",\n  \"timezone\": \"Asia/Jakarta\",\n  \"content\": {\n    \"marketOverview\": true,\n    \"portfolioUpdates\": true,\n    \"signalAlerts\": true,\n    \"newsDigest\": true,\n    \"watchlistUpdates\": true\n  },\n  \"format\": {\n    \"includeCharts\": true,\n    \"detailedAnalysis\": false,\n    \"language\": \"en\"\n  },\n  \"delivery\": {\n    \"email\": \"user@example.com\",\n    \"pushNotification\": true,\n    \"inApp\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/settings/digest",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "settings", "digest"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"enabled\": true,\n  \"frequency\": \"daily\",\n  \"time\": \"09:00\",\n  \"timezone\": \"Asia/Jakarta\",\n  \"content\": {\n    \"marketOverview\": true,\n    \"portfolioUpdates\": true,\n    \"signalAlerts\": true,\n    \"newsDigest\": true,\n    \"watchlistUpdates\": true\n  },\n  \"format\": {\n    \"includeCharts\": true,\n    \"detailedAnalysis\": false,\n    \"language\": \"en\"\n  },\n  \"delivery\": {\n    \"email\": \"user@example.com\",\n    \"pushNotification\": true,\n    \"inApp\": true\n  },\n  \"lastSentAt\": \"2024-01-15T08:00:00.000Z\",\n  \"nextScheduledAt\": \"2024-01-16T09:00:00.000Z\"\n}"
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "description": "Base URL for the API"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "description": "JWT access token obtained from login"
+    }
+  ]
+}

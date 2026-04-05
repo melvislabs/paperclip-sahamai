@@ -1,0 +1,86 @@
+{
+  "info": {
+    "name": "Saham AI API - WebSocket",
+    "description": "WebSocket connection endpoints for real-time data streaming including signals, quotes, and portfolio updates.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "saham-ai-api-websocket-v1",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "item": [
+    {
+      "name": "WebSocket Connection",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Connection",
+            "value": "Upgrade"
+          },
+          {
+            "key": "Upgrade",
+            "value": "websocket"
+          },
+          {
+            "key": "Sec-WebSocket-Key",
+            "value": "dGhlIHNhbXBsZSBub25jZQ=="
+          },
+          {
+            "key": "Sec-WebSocket-Version",
+            "value": "13"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/ws",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "ws"]
+        },
+        "description": "Establish WebSocket connection for real-time data streaming. Use Postman's WebSocket client or connect via ws://localhost:3000/v1/ws with Bearer token in query parameter."
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "description": "Base URL for the API"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "description": "JWT access token obtained from login"
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// WebSocket connection information",
+          "console.log('WebSocket Connection Details:');",
+          "console.log('URL: ws://localhost:3000/v1/ws');",
+          "console.log('Authentication: Bearer token in query parameter or header');",
+          "console.log('');",
+          "console.log('Message Formats:');",
+          "console.log('1. Subscribe to signals: {\"type\": \"subscribe\", \"channel\": \"signals\", \"symbols\": [\"BBCA\", \"TLKM\"]}');",
+          "console.log('2. Subscribe to quotes: {\"type\": \"subscribe\", \"channel\": \"quotes\", \"symbols\": [\"BBCA\", \"TLKM\"]}');",
+          "console.log('3. Subscribe to portfolio: {\"type\": \"subscribe\", \"channel\": \"portfolio\", \"portfolioId\": \"portfolio_123\"}');",
+          "console.log('');",
+          "console.log('Expected Response Formats:');",
+          "console.log('- Signal updates: {\"type\": \"signal\", \"data\": {...}}');",
+          "console.log('- Quote updates: {\"type\": \"quote\", \"data\": {...}}');",
+          "console.log('- Portfolio updates: {\"type\": \"portfolio\", \"data\": {...}}');",
+          "console.log('- Connection status: {\"type\": \"status\", \"message\": \"Connected\"}')"
+        ]
+      }
+    }
+  ]
+}

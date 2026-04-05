@@ -2,10 +2,35 @@ import type { SignalData, StockQuote, PortfolioSummary, AIInsight, AIAnalysisRep
 
 const API_BASE = '';
 
-async function fetchApi<T>(url: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${url}`);
-  if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
-  return res.json();
+export async function fetchApi<T>(url: string, init?: RequestInit): Promise<T> {
+  const token = localStorage.getItem('authToken');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(init?.headers as Record<string, string> || {}),
+  };
+  
+  try {
+    const res = await fetch(`${API_BASE}${url}`, { ...init, headers });
+    
+    if (res.status === 401) {
+      // Clear invalid token and redirect to login
+      localStorage.removeItem('authToken');
+      throw new Error('Authentication expired. Please sign in again.');
+    }
+    
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => 'Unknown error');
+      throw new Error(`API error: ${res.status} ${res.statusText} - ${errorText}`);
+    }
+    
+    return res.json();
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Network error. Please check your connection.');
+    }
+    throw error;
+  }
 }
 
 export async function fetchSignals(): Promise<SignalData[]> {
@@ -31,6 +56,30 @@ export async function fetchPortfolioSummary(): Promise<PortfolioSummary> {
 
 export async function fetchMarketOverview(): Promise<MarketOverview> {
   return fetchApi<MarketOverview>('/v1/market/overview');
+}
+
+export async function fetchWatchlist(): Promise<{ symbols: string[] }> {
+  return fetchApi<{ symbols: string[] }>('/v1/watchlist');
+}
+
+export async function addWatchlistSymbol(symbol: string): Promise<{ symbols: string[] }> {
+  return fetchApi<{ symbols: string[] }>('/v1/watchlist', {
+    method: 'POST',
+    body: JSON.stringify({ symbol })
+  });
+}
+
+export async function removeWatchlistSymbol(symbol: string): Promise<{ symbols: string[] }> {
+  return fetchApi<{ symbols: string[] }>(`/v1/watchlist/${encodeURIComponent(symbol)}`, {
+    method: 'DELETE'
+  });
+}
+
+export async function replaceWatchlist(symbols: string[]): Promise<{ symbols: string[] }> {
+  return fetchApi<{ symbols: string[] }>('/v1/watchlist', {
+    method: 'PUT',
+    body: JSON.stringify({ symbols })
+  });
 }
 
 export async function fetchOpsMetrics(): Promise<OpsMetrics> {
